@@ -35,18 +35,27 @@
 
 void init(void);
 void drawScreen(void);
+void drawButton_Reload(int x,int y, int id);
+void drawButton_Back(int x,int y, int id);
+void drawButton_Next(int x,int y, int id);
+void drawButton_Exit(int x,int y, int id);
+void drawCommandBar(void);
+void drawPointer(int x, int y, int px, int py);
 void clearStatusBar(void);
 void clearCommandBar(void);
 void clearPage(void);
 void getSParam(char delimiter, char* buf,  int size, int param, char *out);
-void drawPointer(int x, int y, int px, int py);
+
 void tgi_outtxt(char *text, int idx, int x1, int y1, int scale);
-void tgi_box(int x1, int y1, int x2, int y2);
+void tgi_box(int x1, int y1, int x2, int y2, int color);
 void tgi_putc(char c, int scale);
 void tgi_print(char* text, int len, int scale);
-void processPage(void);
-int handleMouseBug(int c, int lastkey);
+
 void loadPage(char* page);
+void processPage(void);
+
+int handleMouseBug(int c, int lastkey);
+int mouseClickHandler(int x, int y, int scale);
 bool inBounds(int x, int y, struct Coordinates *coords);
 int main (void);
 
@@ -67,11 +76,17 @@ struct Coordinates {
 	int y2;
 };
 
+// link buttons rendered on a page
 char links[10][80];
 struct Coordinates linkCoordinates[10];
 int linkcount = 0;
 
-char history[10][80];
+// location of browser buttons (reload, back, next, close, etc)
+struct Coordinates browserCoordinates[5];
+int browserButtonCmdId[5];
+int browserButtonCount=5;
+
+char history[1][80];
 int historycount = 0;
 
 char inBuffer[200][80];
@@ -149,7 +164,8 @@ void clearCommandBar(void)
 {
 	int scale = 2;
 	tgi_setcolor(1);
-	tgi_bar(CMDLINEX+6*scale*4,CMDLINEY,639,CMDLINEY+6);
+	tgi_bar(0,26,639,37);
+	tgi_outtxt("cmd>",4, CMDLINEX, CMDLINEY, 2);
 }
 
 void clearPage(void)
@@ -213,6 +229,78 @@ void init(void)
 
 }
 
+void drawButton_Reload(int x,int y, int id)
+{
+	tgi_box(x,y,x+80,y+11,0);	// reload
+	browserCoordinates[id].x1 = x;
+	browserCoordinates[id].y1 = y;
+	browserCoordinates[id].x2 = x+80;
+	browserCoordinates[id].y2 = y+11;
+	browserButtonCmdId[id] = id;
+	
+	tgi_outtxt("reload",6,13,15,2);
+}
+
+void drawButton_Back(int x,int y, int id)
+{
+	tgi_box(x,y,x+30,y+11,0);	// back
+	browserCoordinates[id].x1 = x;
+	browserCoordinates[id].y1 = y;
+	browserCoordinates[id].x2 = x+30;
+	browserCoordinates[id].y2 = y+11;
+	browserButtonCmdId[id] = id;
+
+	tgi_setcolor(0);
+	tgi_line(x+10,y+2,x+10,y+2);
+	tgi_line(x+9,y+3,x+9,y+3);
+	tgi_line(x+8,y+4,x+10,y+4);
+	tgi_line(x+7,y+5,x+21,y+5);
+	tgi_line(x+6,y+6,x+21,y+6);
+	tgi_line(x+7,y+7,x+21,y+7);
+	tgi_line(x+8,y+8,x+10,y+8);
+	tgi_line(x+9,y+9,x+10,y+9);
+	tgi_line(x+10,y+10,x+10,y+10);
+	tgi_setcolor(1);
+}
+
+void drawButton_Next(int x,int y, int id)
+{
+	tgi_box(x,y,x+30,y+11,0);	// back
+	browserCoordinates[id].x1 = x;
+	browserCoordinates[id].y1 = y;
+	browserCoordinates[id].x2 = x+30;
+	browserCoordinates[id].y2 = y+11;
+	browserButtonCmdId[id] = id;
+
+	tgi_setcolor(0);
+	tgi_line(x+20,y+2,x+20,y+2);
+	tgi_line(x+20,y+3,x+21,y+3);
+	tgi_line(x+20,y+4,x+22,y+4);
+	tgi_line(x+7,y+5,x+23,y+5);
+	tgi_line(x+7,y+6,x+24,y+6);
+	tgi_line(x+7,y+7,x+23,y+7);
+	tgi_line(x+20,y+8,x+22,y+8);
+	tgi_line(x+20,y+9,x+21,y+9);
+	tgi_line(x+20,y+10,x+20,y+10);
+	tgi_setcolor(1);
+}
+
+void drawButton_Exit(int x,int y, int id)
+{
+	// exit box
+	tgi_box(x,y,x+25,y+8,0);
+	tgi_setcolor(1);
+	tgi_bar(x+1,y+1,x+24,y+7);
+	tgi_setcolor(0);
+	tgi_bar(x+2,y+2,x+23,y+6);
+	browserCoordinates[id].x1 = 600;
+	browserCoordinates[id].y1 = 2;
+	browserCoordinates[id].x2 = 625;
+	browserCoordinates[id].y2 = 10;
+	browserButtonCmdId[id] = id;
+}
+
+
 void drawScreen(void)
 {
 	char *title = "rhml browser";
@@ -237,42 +325,22 @@ void drawScreen(void)
 	tgi_line(0,PAGEY2+2,639,PAGEY2+2);
 	
 	// Draw buttons
-	tgi_box(10,12,90,23);
-	tgi_box(100,12,130,23);
-	tgi_box(140,12,170,23);
+	drawButton_Reload(8,12,0);
+	drawButton_Back(100,12,1);
+	drawButton_Next(140,12,2);
+	drawButton_Exit(600,2,3);
 	
-	// arrows
-	tgi_line(110,14,110,14);
-	tgi_line(109,15,110,15);
-	tgi_line(108,16,110,16);
-	tgi_line(107,17,121,17);
-	tgi_line(106,18,121,18);
-	tgi_line(107,19,121,19);
-	tgi_line(108,20,110,20);
-	tgi_line(109,21,110,21);
-	tgi_line(110,22,110,22);
-	
-	tgi_line(160,14,160,14);
-	tgi_line(160,15,161,15);
-	tgi_line(160,16,162,16);
-	tgi_line(149,17,163,17);
-	tgi_line(149,18,164,18);
-	tgi_line(149,19,163,19);
-	tgi_line(160,20,162,20);
-	tgi_line(160,21,161,21);
-	tgi_line(160,22,160,22);
-	
-	// exit box
-	tgi_box(600,2,625,10);
-	tgi_setcolor(1);
-	tgi_bar(601,3,624,9);
-	tgi_setcolor(0);
-	tgi_bar(602,4,623,8);
-	
+	// Command bar (to clear when clicked)
+	browserCoordinates[4].x1 = 0;
+	browserCoordinates[4].y1 = 26;
+	browserCoordinates[4].x2 = 639;
+	browserCoordinates[4].y2 = 37;
+	browserButtonCmdId[4] = 4;
+
 	tgi_outtxt(title, 12, TITLEX,TITLEY, 2);
 	tgi_outtxt("cmd>",4, CMDLINEX, CMDLINEY, 2);
 	tgi_outtxt("command mode",12, STATUSX,STATUSY,2);
-	tgi_outtxt("reload",6,13,15,2);
+	
 	
 }
 
@@ -315,8 +383,9 @@ void getSParam(char delimiter, char* buf,  int size, int param, char *out) {
     }
 }
 
-void tgi_box(int x1, int y1, int x2, int y2)
+void tgi_box(int x1, int y1, int x2, int y2, int color)
 {
+	tgi_setcolor(color);
 	tgi_line(x1,y1,x2,y1);
 	tgi_line(x2,y1,x2,y2);
 	tgi_line(x2,y2,x1,y2);
@@ -507,11 +576,7 @@ void processPage(void)
 			z2 = 6*p*scale;
 			
 			tgi_setcolor(0);
-			tgi_box(x1,y1,x1+z2+6,y1+10);
-			//tgi_line(x1,y1,x1+z2+5,y1);
-			//tgi_line(x1+z2+5,y1,x1+z2+5,y1+10);
-			//tgi_line(x1+z2+5,y1+10,x1,y1+10);
-			//tgi_line(x1,y1+10,x1,y1);
+			tgi_box(x1,y1,x1+z2+6,y1+10,0);
 			tgi_outtxt(param, p, x1+5,y1+3, scale);
 			strcpy(links[linkcount],page);
 
@@ -600,10 +665,8 @@ bool inBounds(int x, int y, struct Coordinates *coords)
 
 void linkbuttonClick(struct Coordinates *coords, char *linkPage, int scale)
 {
-	tgi_setcolor(1);
-	tgi_box(coords->x1, coords->y1, coords->x2, coords->y2);
-	tgi_setcolor(0);
-	tgi_box(coords->x1, coords->y1,	coords->x2, coords->y2);			
+	tgi_box(coords->x1, coords->y1, coords->x2, coords->y2, 1);
+	tgi_box(coords->x1, coords->y1,	coords->x2, coords->y2, 0);			
 	
 	tgi_outtxt("click.......",12, STATUSX,STATUSY,scale);
 		
@@ -619,32 +682,91 @@ void linkbuttonClick(struct Coordinates *coords, char *linkPage, int scale)
 	loadPage(currPage);
 }
 
+void browserbuttonClick(struct Coordinates *coords, int command)
+{
+	if(command != 4) 
+	{
+		tgi_setcolor(1);
+		tgi_box(coords->x1, coords->y1, coords->x2, coords->y2,1);
+		tgi_setcolor(0);
+		tgi_box(coords->x1, coords->y1,	coords->x2, coords->y2,0);			
+	}
+
+	switch(command)
+	{
+		case 0:
+		{
+			// reload current page
+			loadPage(currPage);
+			break;
+		}
+		case 1:
+		{
+			// todo: prev page
+			return;
+		}
+		case 2:
+		{
+			// todo: next page
+			return;
+		}
+		case 3:
+		{
+			// exit
+			asm("jsr $FF3D");
+			break;
+		}
+		case 4:
+		{
+			clearCommandBar();
+			return;
+		}
+	}
+}
+
+int mouseClickHandler(int x, int y, int scale)
+{
+	int tmp=0;
+	int clicked = 0;
+
+	for (tmp=0;tmp<=browserButtonCount;tmp++)
+	{
+		if(inBounds(x, y, &browserCoordinates[tmp])==true)
+		{
+			clicked = 0;
+			browserbuttonClick(&browserCoordinates[tmp], browserButtonCmdId[tmp]);
+			break;
+		}
+	}
+
+	for(tmp=0;tmp<linkcount;tmp++)
+	{
+		if(inBounds(x, y, &linkCoordinates[tmp]) == true)
+		{
+			clicked = 1;
+			linkbuttonClick(&linkCoordinates[tmp], links[tmp], scale);
+			break;
+		}
+	}
+
+	return clicked;
+}
+
 int main (void)
 {
+  struct mouse_info info;
   int idx = 0;
-  int x1 = 10;
-  int y1 = 20;
-  int x2 = 0;
-  int y2 = 0;
-  int yt = 0;
-  int z = 0;
-  int z2 = 0;
-  int p = 0;
   int tmp = 0;
   int scale = 2;
   int mode=0;
   char cbuf[1];
   int sayonce = 0;
-  struct mouse_info info;
   int px = 0;
   int py = 0;
-  int pk = 0;
-  int shift = 0;
   int lastkey = -1;
   int clicked = 0;
   int periodx=0;
 
-  
   init();
   us_init();
     
@@ -660,35 +782,14 @@ int main (void)
 
   while (1)
 	{
-		
 		mouse_info (&info);
 		
 		// mouse driver is for 320 screen
-		// so we double the x
-		
+		// so we double the x for 640 VDC
 		info.pos.x *=2;
 		
 		if((info.buttons & MOUSE_BTN_LEFT) != 0 && clicked == 0)
-		{	
-			// check if clicked reload button
-			if(info.pos.x > 10 && info.pos.x < 90 && info.pos.y > 12 && info.pos.y < 23)
-			{
-				clicked = 1;
-				loadPage(currPage);
-			}
-			else 
-			{
-				for(tmp=0;tmp<linkcount;tmp++)
-				{
-					if(inBounds(info.pos.x, info.pos.y, &linkCoordinates[tmp]) == true)
-					{
-						clicked = 1;
-						linkbuttonClick(&linkCoordinates[tmp], links[tmp], scale);
-						break;
-					}
-				}
-			}
-		}
+			clicked = mouseClickHandler(info.pos.x, info.pos.y, scale);
 		
 		if(px != info.pos.x || py != info.pos.y)
 		{
