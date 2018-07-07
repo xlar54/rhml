@@ -2,7 +2,7 @@
 
 Please see the project website at https://rhml-browser.blogspot.com/ for more information.
 
-!(https://i.imgur.com/tRHX7Fl.png)
+![Screenshot](https://i.imgur.com/tRHX7Fl.png)
 
 To compile the source:
 
