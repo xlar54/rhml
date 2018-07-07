@@ -1,3 +1,8 @@
+/* RHML Browser
+	Written By Scott Hutter
+	7/7/2018 - Initial beta release
+*/
+
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -26,12 +31,30 @@
 #define STATUSX	5
 #define STATUSY 190
 
+// prototypes
+
+void init(void);
+void drawScreen(void);
+void clearStatusBar(void);
+void clearCommandBar(void);
+void clearPage(void);
+void getSParam(char delimiter, char* buf,  int size, int param, char *out);
+void drawPointer(int x, int y, int px, int py);
 void tgi_outtxt(char *text, int idx, int x1, int y1, int scale);
 void tgi_box(int x1, int y1, int x2, int y2);
+void tgi_putc(char c, int scale);
+void tgi_print(char* text, int len, int scale);
+void processPage(void);
+int handleMouseBug(int c, int lastkey);
+void loadPage(char* page);
+bool inBounds(int x, int y, struct Coordinates *coords);
+int main (void);
 
 // Terminal cursor x/y
 int cx = PAGEX1;
 int cy = PAGEY1;
+unsigned char c = 0;
+unsigned char d = 0;
 int promptx = CMDLINEX;
 int prompty = CMDLINEY;
 
@@ -44,30 +67,92 @@ struct Coordinates {
 	int y2;
 };
 
-char history[10][80];
-int historycount = 0;
 char links[10][80];
 struct Coordinates linkCoordinates[10];
 int linkcount = 0;
 
+char history[10][80];
+int historycount = 0;
+
 char inBuffer[200][80];
 int inBufferIndex = 0;
 
-void clearStatusBar()
+int font[59][5] = { 
+					{0,0,0,0,0},
+					{4,4,4,0,4},
+					{17,17,0,0,0},
+					{10,31,10,31,10},
+					{4,14,12,6,14},
+					{25,26,4,11,19},
+					{4,10,4,10,13},
+					{3,6,0,0,0},
+					{4,8,8,8,4},
+					{4,2,2,2,4},
+					{21,14,31,14,21},
+					{4,4,31,4,4},
+					{0,0,0,4,8},
+					{0,0,31,0,0},
+					{0,0,0,4,0},
+					{1,2,4,8,16},
+					{14,25,21,19,14},
+					{4,12,4,4,14},
+					{12,18,4,8,30},
+					{12,2,12,2,12},
+					{10,10,14,2,2},
+					{31,16,30,1,30},
+					{14,16,30,17,14},
+					{14,2,4,4,4},
+					{14,17,14,17,14},
+					{12,18,14,2,2},
+					{4,4,0,4,4},
+					{4,4,0,4,8},
+					{4,8,16,8,4},
+					{0,31,0,31,0},
+					{4,2,1,2,4},
+					{6,1,6,0,4},
+					{14,23,23,16,14},
+					{14,17,31,17,17}, //A
+					{30,17,30,17,30},
+					{14,16,16,16,14},
+					{30,17,17,17,30},
+					{30,16,30,16,30},
+					{30,16,30,16,16},
+					{14,16,23,17,14},
+					{17,17,31,17,17},
+					{31, 4, 4, 4,31},
+					{14, 4, 4,20, 8},
+					{17,18,28,18,17},
+					{16,16,16,16,31},
+					{17,27,21,17,17},
+					{17,25,21,19,17},
+					{14,17,17,17,14},
+					{30,17,30,16,16},
+					{14,17,17,18,13},
+					{30,17,30,17,17},
+					{14,16,14, 1,14},
+					{31, 4, 4, 4, 4},
+					{17,17,17,17,14},
+					{17,17,17,14, 4},
+					{17,21,31,14,10},
+					{17,10, 4,10,17},
+					{17,10, 4, 4, 4},
+					{31, 2, 4, 8, 31} };
+
+void clearStatusBar(void)
 {
 	tgi_setcolor(1);
 	tgi_bar(STATUSX,STATUSY, 639, 199);
 	tgi_setcolor(0);
 }
 
-void clearCommandBar()
+void clearCommandBar(void)
 {
 	int scale = 2;
 	tgi_setcolor(1);
 	tgi_bar(CMDLINEX+6*scale*4,CMDLINEY,639,CMDLINEY+6);
 }
 
-void clearPage()
+void clearPage(void)
 {
 	tgi_setcolor(1);
 	tgi_bar(PAGEX1,PAGEY1,PAGEX2,PAGEY2);
@@ -109,7 +194,7 @@ void drawPointer(int x, int y, int px, int py)
 
 }
 
-void init()
+void init(void)
 {
 	int err = 0;
 	
@@ -128,7 +213,7 @@ void init()
 
 }
 
-void drawScreen()
+void drawScreen(void)
 {
 	char *title = "rhml browser";
 	
@@ -230,72 +315,6 @@ void getSParam(char delimiter, char* buf,  int size, int param, char *out) {
     }
 }
 
-
-  
-unsigned char c = 0;
-unsigned char d = 0;
-int font[59][5] = { 
-					{0,0,0,0,0},
-					{4,4,4,0,4},
-					{17,17,0,0,0},
-					{10,31,10,31,10},
-					{4,14,12,6,14},
-					{25,26,4,11,19},
-					{4,10,4,10,13},
-					{3,6,0,0,0},
-					{4,8,8,8,4},
-					{4,2,2,2,4},
-					{21,14,31,14,21},
-					{4,4,31,4,4},
-					{0,0,0,4,8},
-					{0,0,31,0,0},
-					{0,0,0,4,0},
-					{1,2,4,8,16},
-					{14,25,21,19,14},
-					{4,12,4,4,14},
-					{12,18,4,8,30},
-					{12,2,12,2,12},
-					{10,10,14,2,2},
-					{31,16,30,1,30},
-					{14,16,30,17,14},
-					{14,2,4,4,4},
-					{14,17,14,17,14},
-					{12,18,14,2,2},
-					{4,4,0,4,4},
-					{4,4,0,4,8},
-					{4,8,16,8,4},
-					{0,31,0,31,0},
-					{4,2,1,2,4},
-					{6,1,6,0,4},
-					{14,23,23,16,14},
-					{14,17,31,17,17}, //A
-					{30,17,30,17,30},
-					{14,16,16,16,14},
-					{30,17,17,17,30},
-					{30,16,30,16,30},
-					{30,16,30,16,16},
-					{14,16,23,17,14},
-					{17,17,31,17,17},
-					{31, 4, 4, 4,31},
-					{14, 4, 4,20, 8},
-					{17,18,28,18,17},
-					{16,16,16,16,31},
-					{17,27,21,17,17},
-					{17,25,21,19,17},
-					{14,17,17,17,14},
-					{30,17,30,16,16},
-					{14,17,17,18,13},
-					{30,17,30,17,17},
-					{14,16,14, 1,14},
-					{31, 4, 4, 4, 4},
-					{17,17,17,17,14},
-					{17,17,17,14, 4},
-					{17,21,31,14,10},
-					{17,10, 4,10,17},
-					{17,10, 4, 4, 4},
-					{31, 2, 4, 8, 31} };
-					
-
 void tgi_box(int x1, int y1, int x2, int y2)
 {
 	tgi_line(x1,y1,x2,y1);
@@ -381,7 +400,7 @@ void tgi_print(char* text, int len, int scale)
 	cx += 6*len*scale;
 }
 
-void processPage()
+void processPage(void)
 {
   char param[80];
   int idx = 0;
@@ -510,7 +529,6 @@ void processPage()
 	tgi_outtxt("command mode",12, STATUSX,STATUSY,scale);
 }
 
-
 int handleMouseBug(int c, int lastkey)
 {
 	int pk = 0;
@@ -554,7 +572,6 @@ int handleMouseBug(int c, int lastkey)
 	return c;
 }
 
-
 void loadPage(char* page)
 {
 	int ctr = 0;
@@ -579,6 +596,27 @@ bool inBounds(int x, int y, struct Coordinates *coords)
 		return true;
 	else
 		return false;
+}
+
+void linkbuttonClick(struct Coordinates *coords, char *linkPage, int scale)
+{
+	tgi_setcolor(1);
+	tgi_box(coords->x1, coords->y1, coords->x2, coords->y2);
+	tgi_setcolor(0);
+	tgi_box(coords->x1, coords->y1,	coords->x2, coords->y2);			
+	
+	tgi_outtxt("click.......",12, STATUSX,STATUSY,scale);
+		
+	tgi_setcolor(1);
+	tgi_bar(CMDLINEX,CMDLINEY, CMDLINEX+500, CMDLINEY+5);
+	tgi_setcolor(0);
+	
+	tgi_outtxt("cmd>GET ",8, CMDLINEX, CMDLINEY, 2);
+	tgi_outtxt(linkPage,strlen(linkPage), CMDLINEX+(6*8), CMDLINEY, 2);
+	
+	strcpy(currPage,linkPage);
+	
+	loadPage(currPage);
 }
 
 int main (void)
@@ -644,19 +682,8 @@ int main (void)
 				{
 					if(inBounds(info.pos.x, info.pos.y, &linkCoordinates[tmp]) == true)
 					{
-						tgi_outtxt("click.......",12, STATUSX,STATUSY,scale);
 						clicked = 1;
-						
-						tgi_setcolor(1);
-						tgi_bar(CMDLINEX,CMDLINEY, CMDLINEX+500, CMDLINEY+5);
-						tgi_setcolor(0);
-						
-						tgi_outtxt("cmd>GET ",8, CMDLINEX, CMDLINEY, 2);
-						tgi_outtxt(links[tmp],strlen(links[tmp]), CMDLINEX+(6*8), CMDLINEY, 2);
-						
-						strcpy(currPage,links[tmp]);
-						
-						loadPage(currPage);
+						linkbuttonClick(&linkCoordinates[tmp], links[tmp], scale);
 						break;
 					}
 				}
