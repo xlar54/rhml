@@ -23,16 +23,6 @@ function receiveData(socket, data) {
 			closeSocket(socket);	
 		}
 		inqueue = "";
-		
-		/*if(inqueue.substring(0,3).toUpperCase() =='AT')		{
-			var msg = "ok\r";
-			socket.write(msg);
-			console.log(msg);
-			//for(var n=0;n<msg.length;n++) {
-				//console.log(msg.charCodeAt(n));
-				//socket.write(msg.charAt(n));
-				//}
-		}*/
 	}
 	else
 	{
@@ -48,12 +38,17 @@ function requestPage(socket, page) {
 		fs.readFile(page, 'utf8', function(err, data) {
 			if(err !== null)
 			{
-				socket.write("*C\r");
-				socket.write("*C\r");
-				socket.write("*S,3\r");
-				socket.write("*T,404 - FILE NOT FOUND.\r");
-				socket.write("*T,"+err+"\r");
-				socket.write("*E\r");
+				fs.readFile("404.rhml", 'utf8', function(err, data) {
+						if(err !== null)
+						{
+							socket.write("*T,404 FILE NOT FOUND..AND SERVER IS MISSING 404 PAGE\r");
+							socket.write("*E,\r");
+						}
+						else
+						{
+							socket.write(data);
+						}
+				});
 			}
 			else
 			{

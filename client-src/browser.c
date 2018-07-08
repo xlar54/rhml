@@ -41,6 +41,7 @@ void drawButton_Next(int x,int y, int id);
 void drawButton_Exit(int x,int y, int id);
 void drawCommandBar(void);
 void drawPointer(int x, int y, int px, int py);
+void drawPrompt(int x,int y,int size);
 void clearStatusBar(void);
 void clearCommandBar(void);
 void clearPage(void);
@@ -300,6 +301,16 @@ void drawButton_Exit(int x,int y, int id)
 	browserButtonCmdId[id] = id;
 }
 
+void drawPrompt(int x, int y, int size)
+{
+	tgi_setcolor(0);
+	tgi_line(x,y,x+size,y);
+	tgi_line(x,y+1,x+size,y+1);
+	tgi_line(x,y+2,x+size,y+2);
+	tgi_line(x,y+3,x+size,y+3);
+	tgi_line(x,y+4,x+size,y+4);
+	tgi_setcolor(1);
+}
 
 void drawScreen(void)
 {
@@ -349,13 +360,20 @@ void getSParam(char delimiter, char* buf,  int size, int param, char *out) {
     int idx =0;
     int pcount=-1;
     int x=0;
-    
+    bool textcmd = false;
+	
     out[idx] = 0;
     
+	if(buf[0] == '*' && buf[1] == 't')
+		textcmd = true;
+	
     for(x=0 ; x<size; x++)
     {
         if (buf[x] == delimiter)
         {
+			if(textcmd == true && pcount==-1)
+				delimiter = 0xff;
+			
             pcount++;
             if(pcount == param)
             {
@@ -642,7 +660,7 @@ void loadPage(char* page)
 	int ctr = 0;
 	int t=0;
 	
-	us_putc('g');us_putc('e');us_putc('t');
+	us_putc(13);us_putc('g');us_putc('e');us_putc('t');
 
 	for(ctr=0;ctr<strlen(page);ctr++)
 	{
@@ -777,6 +795,7 @@ int main (void)
   mouse_install (&mouse_def_callbacks, mouse_static_stddrv);
 
   promptx = CMDLINEX+(6*scale*4);
+  drawPrompt(promptx,CMDLINEY,10);
   
   strcpy(currPage,"index.rhml");
 
@@ -818,6 +837,7 @@ int main (void)
 				// clear command line
 				clearCommandBar();
 				promptx = CMDLINEX+(6*scale*4);
+				drawPrompt(promptx,CMDLINEY,10);
 			}
 			else
 			{
@@ -825,6 +845,7 @@ int main (void)
 				cbuf[0] = c;
 				tgi_outtxt(cbuf,1, promptx, CMDLINEY, scale);
 				promptx+=6*scale;
+				drawPrompt(promptx,CMDLINEY,10);
 			}
 			
 			// send input char to modem
