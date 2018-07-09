@@ -10,7 +10,8 @@ char** RIBUF = (char**)0x00f7;
 char** ROBUF = (char**)0x00f9;
 
 //bypass cc65 Charter translation
-static unsigned char us_name1200[] = {0x08, 0x00, 0x00}; //1200 8N1
+//static unsigned char us_name1200[] = {0x08, 0x00, 0x00}; //1200 8N1
+static unsigned char us_name2400[] = {0x0A, 0x00, 0x00}; //1200 8N1
 
 char us_buffer[256];
 
@@ -97,7 +98,7 @@ void us_init()
 
   // open rs232 channel
   cbm_k_setlfs (2,2,3);
-  cbm_k_setnam (us_name1200);
+  cbm_k_setnam (us_name2400);
   cbm_k_open ();
   
 

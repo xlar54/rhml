@@ -67,6 +67,7 @@ unsigned char c = 0;
 unsigned char d = 0;
 int promptx = CMDLINEX;
 int prompty = CMDLINEY;
+bool pageClearedFlag = false;
 
 char currPage[80];
 
@@ -174,6 +175,7 @@ void clearPage(void)
 	tgi_setcolor(1);
 	tgi_bar(PAGEX1,PAGEY1,PAGEX2,PAGEY2);
 	tgi_setcolor(0);
+	pageClearedFlag = true;
 }
 
 void drawPointer(int x, int y, int px, int py)
@@ -183,6 +185,12 @@ void drawPointer(int x, int y, int px, int py)
 	int xp=0;
 	int yp=0;
 
+	if (pageClearedFlag)
+	{		
+		notfirstRun = false;
+		pageClearedFlag = false;
+	}
+	
 	if(notfirstRun)
 	{	
 		for(yp=0;yp<9;yp++)
