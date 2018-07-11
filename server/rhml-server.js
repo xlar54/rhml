@@ -12,16 +12,28 @@ function receiveData(socket, data) {
 	
 	if(d.charCodeAt(0) == 13 || d.charCodeAt(0) == 10)
 	{
-		console.log("CMD:" + inqueue);
-		if(inqueue.substring(0,3)=='GET')		{
+		// ignore modem commands
+		if(inqueue.substring(0,2)=='+++')		{
+			inqueue = "";
+			return;
+		}
+		
+		if(inqueue.substring(0,5)=='POST:')		{
 			
-			var page = inqueue.substring(3);
-			requestPage(socket, page);	
+			// FUTURE...
+			inqueue = "";
+			return;
+				
 		}
 		if(inqueue.substring(0,3)=='BYE')		{
 			
-			closeSocket(socket);	
+			closeSocket(socket);
+			inqueue = "";
+			return;
 		}
+		
+		console.log("GET:" + inqueue);
+		requestPage(socket, inqueue);
 		inqueue = "";
 	}
 	else
@@ -32,6 +44,7 @@ function receiveData(socket, data) {
 
 function requestPage(socket, page) {
 
+		page = page.toLowerCase();
 		console.log("Requested " + page);
 		
 		// Read the file and print its contents.
@@ -42,16 +55,18 @@ function requestPage(socket, page) {
 						if(err !== null)
 						{
 							socket.write("*T,404 FILE NOT FOUND..AND SERVER IS MISSING 404 PAGE\r");
-							socket.write("*E,\r");
+							socket.write("*E\r");
 						}
 						else
 						{
+							data += "\r*E\r";
 							socket.write(data);
 						}
 				});
 			}
 			else
 			{
+				data += "\r*E\r";
 				socket.write(data);
 			}
 		});

@@ -11,6 +11,10 @@ void us_printf(const char* format, ... );
 
 void us_aprintf(const char* format, ... );
 
-void us_init();
+void us_init1200();
+
+void us_init2400();
+
+void us_close();
 
 #endif

@@ -31,6 +31,8 @@
 #define STATUSX	5
 #define STATUSY 190
 
+#define MAXINPUTBUFFER	40
+
 // prototypes
 
 void init(void);
@@ -38,12 +40,13 @@ void drawScreen(void);
 void drawButton_Reload(int x,int y, int id);
 void drawButton_Back(int x,int y, int id);
 void drawButton_Next(int x,int y, int id);
+void drawButton_Home(int x,int y, int id);
+void drawButton_Speed(int x,int y, int id);
 void drawButton_Exit(int x,int y, int id);
-void drawCommandBar(void);
+void drawCommandBar(char* text, bool showPrompt);
 void drawPointer(int x, int y, int px, int py);
 void drawPrompt(int x,int y,int size);
 void clearStatusBar(void);
-void clearCommandBar(void);
 void clearPage(void);
 void getSParam(char delimiter, char* buf,  int size, int param, char *out);
 
@@ -52,13 +55,12 @@ void tgi_box(int x1, int y1, int x2, int y2, int color);
 void tgi_putc(char c, int scale);
 void tgi_print(char* text, int len, int scale);
 
-void loadPage(char* page);
+void sendRequest(char* request);
 void processPage(void);
 
 int handleMouseBug(int c, int lastkey);
-int mouseClickHandler(int x, int y, int scale);
+int mouseClickHandler(int x, int y);
 bool inBounds(int x, int y, struct Coordinates *coords);
-int main (void);
 
 // Terminal cursor x/y
 int cx = PAGEX1;
@@ -68,8 +70,13 @@ unsigned char d = 0;
 int promptx = CMDLINEX;
 int prompty = CMDLINEY;
 bool pageClearedFlag = false;
+struct mouse_info mouseInfo;
+bool stopRendering = false;
+int speed = 1200;
 
-char currPage[80];
+char currPage[40];
+char input[MAXINPUTBUFFER];		// keyboard input buffer
+int inputIdx = 0;				// keyboard input buffer current index
 
 struct Coordinates {
 	int x1;
@@ -84,14 +91,14 @@ struct Coordinates linkCoordinates[10];
 int linkcount = 0;
 
 // location of browser buttons (reload, back, next, close, etc)
-struct Coordinates browserCoordinates[5];
-int browserButtonCmdId[5];
-int browserButtonCount=5;
+struct Coordinates browserCoordinates[7];
+int browserButtonCmdId[7];
+int browserButtonCount=6;
 
-char history[1][80];
-int historycount = 0;
+//char history[1][80];
+//int historycount = 0;
 
-char inBuffer[200][80];
+char inBuffer[100][80];
 int inBufferIndex = 0;
 
 int font[59][5] = { 
@@ -162,12 +169,20 @@ void clearStatusBar(void)
 	tgi_setcolor(0);
 }
 
-void clearCommandBar(void)
+void drawCommandBar(char* text, bool showPrompt)
 {
 	int scale = 2;
 	tgi_setcolor(1);
-	tgi_bar(0,26,639,37);
-	tgi_outtxt("cmd>",4, CMDLINEX, CMDLINEY, 2);
+	tgi_bar(CMDLINEX+(6*scale*4),26,639,37);
+	//tgi_outtxt("url>",4, CMDLINEX, CMDLINEY, 2);
+	
+	if (text != 0)
+		tgi_outtxt(text,strlen(text), CMDLINEX+(6*8), CMDLINEY, 2);
+	
+	promptx = CMDLINEX+(6*scale*4);
+	
+	if (showPrompt == true)
+		drawPrompt(promptx,CMDLINEY,10);
 }
 
 void clearPage(void)
@@ -185,7 +200,7 @@ void drawPointer(int x, int y, int px, int py)
 	int xp=0;
 	int yp=0;
 
-	if (pageClearedFlag)
+	if (pageClearedFlag && y >= PAGEY1)
 	{		
 		notfirstRun = false;
 		pageClearedFlag = false;
@@ -294,6 +309,37 @@ void drawButton_Next(int x,int y, int id)
 	tgi_setcolor(1);
 }
 
+void drawButton_Home(int x,int y, int id)
+{
+	tgi_box(x,y,x+30,y+11,0);
+	browserCoordinates[id].x1 = x;
+	browserCoordinates[id].y1 = y;
+	browserCoordinates[id].x2 = x+30;
+	browserCoordinates[id].y2 = y+11;
+	browserButtonCmdId[id] = id;
+
+	tgi_setcolor(0);
+	tgi_line(x+16,y+2,x+18,y+2);
+	tgi_line(x+13,y+3,x+19,y+3);
+	tgi_line(x+10,y+4,x+22,y+4);
+	tgi_line(x+7,y+5,x+25,y+5);
+	tgi_line(x+11,y+6,x+21,y+6);
+	tgi_line(x+11,y+7,x+21,y+7);
+	tgi_line(x+11,y+8,x+21,y+8);
+	tgi_line(x+11,y+9,x+21,y+9);
+	tgi_setcolor(1);
+}
+
+void drawButton_Speed(int x,int y, int id)
+{
+	tgi_box(x,y,x+70,y+11,0);
+	browserCoordinates[id].x1 = x;
+	browserCoordinates[id].y1 = y;
+	browserCoordinates[id].x2 = x+70;
+	browserCoordinates[id].y2 = y+11;
+	browserButtonCmdId[id] = id;
+}
+
 void drawButton_Exit(int x,int y, int id)
 {
 	// exit box
@@ -302,10 +348,10 @@ void drawButton_Exit(int x,int y, int id)
 	tgi_bar(x+1,y+1,x+24,y+7);
 	tgi_setcolor(0);
 	tgi_bar(x+2,y+2,x+23,y+6);
-	browserCoordinates[id].x1 = 600;
-	browserCoordinates[id].y1 = 2;
-	browserCoordinates[id].x2 = 625;
-	browserCoordinates[id].y2 = 10;
+	browserCoordinates[id].x1 = x;
+	browserCoordinates[id].y1 = y;
+	browserCoordinates[id].x2 = x+25;
+	browserCoordinates[id].y2 = y+8;
 	browserButtonCmdId[id] = id;
 }
 
@@ -347,20 +393,27 @@ void drawScreen(void)
 	drawButton_Reload(8,12,0);
 	drawButton_Back(100,12,1);
 	drawButton_Next(140,12,2);
-	drawButton_Exit(600,2,3);
+	drawButton_Home(180,12,6);
+	drawButton_Speed(220,12,3);
+	drawButton_Exit(600,2,4);
+	
+	tgi_setcolor(0);
+	tgi_outtxt("1200",4,225,15,2);
+	tgi_setcolor(1);
+	
 	
 	// Command bar (to clear when clicked)
 	browserCoordinates[4].x1 = 0;
 	browserCoordinates[4].y1 = 26;
 	browserCoordinates[4].x2 = 639;
 	browserCoordinates[4].y2 = 37;
-	browserButtonCmdId[4] = 4;
+	browserButtonCmdId[4] = 5;
 
 	tgi_outtxt(title, 12, TITLEX,TITLEY, 2);
-	tgi_outtxt("cmd>",4, CMDLINEX, CMDLINEY, 2);
+	drawCommandBar(NULL, true);
+	tgi_outtxt("url>",4, CMDLINEX, CMDLINEY, 2);
 	tgi_outtxt("command mode",12, STATUSX,STATUSY,2);
-	
-	
+
 }
 
 void getSParam(char delimiter, char* buf,  int size, int param, char *out) {
@@ -417,7 +470,7 @@ void tgi_box(int x1, int y1, int x2, int y2, int color)
 	tgi_line(x2,y2,x1,y2);
 	tgi_line(x1,y2,x1,y1);
 }
-					
+			
 void tgi_outtxt(char *text, int idx, int x1, int y1, int scale)
 {
 	int yl = 0;
@@ -515,6 +568,7 @@ void processPage(void)
   int b=0;
   char page[80];
 	
+	linkcount = 0;
 	clearStatusBar();
 	tgi_outtxt("rendering...",12, STATUSX,STATUSY,scale);
 	
@@ -522,6 +576,12 @@ void processPage(void)
 	
 	for(zz=0;zz<inBufferIndex;zz++)
 	{	
+		if (stopRendering == true)
+		{
+			stopRendering = false;
+			break;
+		}
+
 		if(inBuffer[zz][0] == '*' && inBuffer[zz][1] == 't')
 		{
 			getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 1, param);
@@ -579,6 +639,17 @@ void processPage(void)
 				if(scale>1) tx1--;
 			}
 			y1+=scale;
+		}
+		
+		if(inBuffer[zz][0] == '*' && inBuffer[zz][1] == 'o')
+		{
+			getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 1, param); x1 = atoi(param);
+			getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 2, param); y1 = atoi(param);
+			getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 3, param); x2 = atoi(param);
+			tgi_setcolor(0);
+			//tgi_arc (x1, y1, x2*2, x2, 0, 180);
+			//tgi_arc (x1, y1, x2*2, x2, 180, 360);
+			tgi_ellipse (x1, y1, x2, tgi_imulround (x2, tgi_getaspectratio()));
 		}
 		
 		if(inBuffer[zz][0] == '*' && inBuffer[zz][1] == 'l')
@@ -663,21 +734,17 @@ int handleMouseBug(int c, int lastkey)
 	return c;
 }
 
-void loadPage(char* page)
+void sendRequest(char* request)
 {
 	int ctr = 0;
 	int t=0;
 	
-	us_putc(13);us_putc('g');us_putc('e');us_putc('t');
-
-	for(ctr=0;ctr<strlen(page);ctr++)
+	for(ctr=0;ctr<strlen(request);ctr++)
 	{
-		for(t=0;t<1200;t++)
-		{
-			// create a brief delay for the modem to keep up
-		}
-		us_putc(page[ctr]);
+		for(t=0;t<1200;t++) {}; // create a brief delay for the modem to keep up
+		us_putc(request[ctr]);
 	}
+	for(t=0;t<1200;t++){};
 	us_putc(13);
 }
 
@@ -689,33 +756,25 @@ bool inBounds(int x, int y, struct Coordinates *coords)
 		return false;
 }
 
-void linkbuttonClick(struct Coordinates *coords, char *linkPage, int scale)
+void linkbuttonClick(struct Coordinates *coords, char *linkPage)
 {
 	tgi_box(coords->x1, coords->y1, coords->x2, coords->y2, 1);
 	tgi_box(coords->x1, coords->y1,	coords->x2, coords->y2, 0);			
 	
-	tgi_outtxt("click.......",12, STATUSX,STATUSY,scale);
-		
-	tgi_setcolor(1);
-	tgi_bar(CMDLINEX,CMDLINEY, CMDLINEX+500, CMDLINEY+5);
-	tgi_setcolor(0);
-	
-	tgi_outtxt("cmd>GET ",8, CMDLINEX, CMDLINEY, 2);
-	tgi_outtxt(linkPage,strlen(linkPage), CMDLINEX+(6*8), CMDLINEY, 2);
-	
 	strcpy(currPage,linkPage);
 	
-	loadPage(currPage);
+	sendRequest(currPage);
 }
 
 void browserbuttonClick(struct Coordinates *coords, int command)
 {
-	if(command != 4) 
+	if(command != 5) 
 	{
+		// Flash the box that was clicked for visual feedback
 		tgi_setcolor(1);
 		tgi_box(coords->x1, coords->y1, coords->x2, coords->y2,1);
 		tgi_setcolor(0);
-		tgi_box(coords->x1, coords->y1,	coords->x2, coords->y2,0);			
+		tgi_box(coords->x1, coords->y1,	coords->x2, coords->y2,0);		
 	}
 
 	switch(command)
@@ -723,7 +782,7 @@ void browserbuttonClick(struct Coordinates *coords, int command)
 		case 0:
 		{
 			// reload current page
-			loadPage(currPage);
+			sendRequest(currPage);
 			break;
 		}
 		case 1:
@@ -738,19 +797,48 @@ void browserbuttonClick(struct Coordinates *coords, int command)
 		}
 		case 3:
 		{
+			if (speed == 1200)
+			{
+				speed = 2400;
+				tgi_setcolor(0);
+				tgi_outtxt("2400",4,225,15,2);
+				tgi_setcolor(1);
+				//us_close();
+				us_init2400();
+			}
+			else
+			{
+				speed = 1200;
+				tgi_setcolor(0);
+				tgi_outtxt("1200",4,225,15,2);
+				tgi_setcolor(1);
+				//us_close();
+				us_init1200();
+			}
+			return;
+		}
+		case 4:  
+		{
 			// exit
 			asm("jsr $FF3D");
 			break;
 		}
-		case 4:
+		case 5:
 		{
-			clearCommandBar();
+			// user clicks command bar.  clear it.
+			drawCommandBar(NULL, true);
 			return;
+		}
+		case 6:
+		{
+			strcpy(currPage, "index.rhml");
+			sendRequest("index.rhml");
+			break;
 		}
 	}
 }
 
-int mouseClickHandler(int x, int y, int scale)
+int mouseClickHandler(int x, int y)
 {
 	int tmp=0;
 	int clicked = 0;
@@ -770,7 +858,7 @@ int mouseClickHandler(int x, int y, int scale)
 		if(inBounds(x, y, &linkCoordinates[tmp]) == true)
 		{
 			clicked = 1;
-			linkbuttonClick(&linkCoordinates[tmp], links[tmp], scale);
+			linkbuttonClick(&linkCoordinates[tmp], links[tmp]);
 			break;
 		}
 	}
@@ -778,13 +866,13 @@ int mouseClickHandler(int x, int y, int scale)
 	return clicked;
 }
 
-int main (void)
+int main ()
 {
-  struct mouse_info info;
+  
   int idx = 0;
   int tmp = 0;
   int scale = 2;
-  int mode=0;
+  bool gettingPage = false;
   char cbuf[1];
   int sayonce = 0;
   int px = 0;
@@ -792,11 +880,11 @@ int main (void)
   int lastkey = -1;
   int clicked = 0;
   int periodx=0;
-
-  init();
-  us_init();
-    
+  int timeClock = 0;
+  
   fast();
+  init();
+  us_init1200();
   drawScreen();
   
   mouse_load_driver (&mouse_def_callbacks, mouse_static_stddrv);
@@ -805,26 +893,26 @@ int main (void)
   promptx = CMDLINEX+(6*scale*4);
   drawPrompt(promptx,CMDLINEY,10);
   
-  strcpy(currPage,"index.rhml");
+  currPage[0] = 0;
+  input[0] = 0;
 
   while (1)
 	{
-		mouse_info (&info);
+		mouse_info (&mouseInfo);
 		
 		// mouse driver is for 320 screen
 		// so we double the x for 640 VDC
-		info.pos.x *=2;
+		mouseInfo.pos.x *=2;
 		
-		if((info.buttons & MOUSE_BTN_LEFT) != 0 && clicked == 0)
-			clicked = mouseClickHandler(info.pos.x, info.pos.y, scale);
+		if((mouseInfo.buttons & MOUSE_BTN_LEFT) != 0 && clicked == 0)
+			clicked = mouseClickHandler(mouseInfo.pos.x, mouseInfo.pos.y);
 		
-		if(px != info.pos.x || py != info.pos.y)
+		if(px != mouseInfo.pos.x || py != mouseInfo.pos.y)
 		{
 			// VDC ONLY
-			drawPointer(info.pos.x, info.pos.y, px,py);
-			px=info.pos.x;
-			py=info.pos.y;
-			//drawPointer(0,px,py);
+			drawPointer(mouseInfo.pos.x, mouseInfo.pos.y, px,py);
+			px=mouseInfo.pos.x;
+			py=mouseInfo.pos.y;
 			// END VDC ONLY
 		}
 
@@ -838,46 +926,67 @@ int main (void)
 		c = cgetc();
 		lastkey=c;
 		
-		if(mode == 0)
+		if(gettingPage == false)
 		{	
 			if(c == 13)
 			{
-				// clear command line
-				clearCommandBar();
-				promptx = CMDLINEX+(6*scale*4);
-				drawPrompt(promptx,CMDLINEY,10);
+				input[inputIdx] = 0;
+				strcpy(currPage,input);
+				inputIdx = 0;
+
+				sendRequest(currPage);
+				drawCommandBar("", true);
+			}
+			else if (c == 20)
+			{
+				if (inputIdx > 0)
+				{
+					cbuf[0] = 32;
+					tgi_outtxt(cbuf,1, promptx, CMDLINEY, scale);
+					
+					promptx-=6*scale;
+					drawPrompt(promptx,CMDLINEY,10);
+					inputIdx--;
+					input[inputIdx] = 0;
+				}
+				
+				c = 0;
 			}
 			else
 			{
-				// add input char to command line
-				cbuf[0] = c;
-				tgi_outtxt(cbuf,1, promptx, CMDLINEY, scale);
-				promptx+=6*scale;
-				drawPrompt(promptx,CMDLINEY,10);
+				if(inputIdx < MAXINPUTBUFFER)
+				{
+					// add input char to command line
+					cbuf[0] = c;
+					tgi_outtxt(cbuf,1, promptx, CMDLINEY, scale);
+					promptx+=6*scale;
+					drawPrompt(promptx,CMDLINEY,10);
+					input[inputIdx] = c;
+					inputIdx++;
+				}
 			}
-			
-			// send input char to modem
-			us_aprintf("%c",c);
 		}
 	  }
 	  
+  
 	  if (d !=0)
 	  {
-		if (idx == 0 && d != '*')
-			mode = 0;
-		else
-			mode = 1;
+		  
+		if (idx == 0)
+			gettingPage = (d == '*' ? true : false);
 		
-		if (mode == 0)  
-			tgi_putc(d,scale);
-		else
+		if (gettingPage == true)
 		{
 			if (sayonce == 0)
 			{
+				if(currPage[0] == 0)
+					strcpy(currPage, "index.rhml");
+				
+				drawCommandBar(currPage, false);
+				
 				clearStatusBar();
 				tgi_outtxt("page loading",12, STATUSX,STATUSY,scale);
 				sayonce=1;
-				linkcount=0;
 				cx = STATUSX+130;
 				cy = STATUSY;
 			}
@@ -893,11 +1002,11 @@ int main (void)
 					processPage();
 					inBufferIndex=0;
 					idx=0;
-					mode=0;
+					gettingPage = false;
 					sayonce=0;
 					clicked=0;	
 					periodx=0;
-					drawPointer(info.pos.x, info.pos.y, px,py);
+					drawPointer(mouseInfo.pos.x, mouseInfo.pos.y, px,py);
 				}
 				else
 				{			
@@ -912,6 +1021,8 @@ int main (void)
 				}
 			}
 		}
+		else
+			tgi_putc(d,scale);
 	  }
 
   
