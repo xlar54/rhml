@@ -17,9 +17,12 @@
 #include <unistd.h>
 #include "userial.h"
 
+#define WIDTH	639
+#define HEIGHT	199
+
 #define PAGEX1	0
 #define PAGEY1	40
-#define PAGEX2	639
+#define PAGEX2	WIDTH
 #define PAGEY2	183
 
 #define TITLEX	245
@@ -32,6 +35,10 @@
 #define STATUSY 190
 
 #define MAXINPUTBUFFER	40
+#define MAXLINKS		10
+#define MAXCOLSPERPAGE	80
+#define MAXLINESPERPAGE	100
+#define MAXFILENAMESZ	40
 
 // prototypes
 
@@ -59,7 +66,7 @@ void sendRequest(char* request);
 void processPage(void);
 
 int handleMouseBug(int c, int lastkey);
-int mouseClickHandler(int x, int y);
+bool mouseClickHandler(int x, int y);
 bool inBounds(int x, int y, struct Coordinates *coords);
 
 // Terminal cursor x/y
@@ -71,10 +78,9 @@ int promptx = CMDLINEX;
 int prompty = CMDLINEY;
 bool pageClearedFlag = false;
 struct mouse_info mouseInfo;
-bool stopRendering = false;
-int speed = 1200;
+int speed = 2400;
 
-char currPage[40];
+char currPage[MAXFILENAMESZ];
 char input[MAXINPUTBUFFER];		// keyboard input buffer
 int inputIdx = 0;				// keyboard input buffer current index
 
@@ -86,8 +92,8 @@ struct Coordinates {
 };
 
 // link buttons rendered on a page
-char links[10][80];
-struct Coordinates linkCoordinates[10];
+char links[MAXLINKS][MAXFILENAMESZ];
+struct Coordinates linkCoordinates[MAXLINKS];
 int linkcount = 0;
 
 // location of browser buttons (reload, back, next, close, etc)
@@ -98,7 +104,7 @@ int browserButtonCount=6;
 //char history[1][80];
 //int historycount = 0;
 
-char inBuffer[100][80];
+char inBuffer[MAXLINESPERPAGE][MAXCOLSPERPAGE];
 int inBufferIndex = 0;
 
 int font[59][5] = { 
@@ -165,7 +171,7 @@ int font[59][5] = {
 void clearStatusBar(void)
 {
 	tgi_setcolor(1);
-	tgi_bar(STATUSX,STATUSY, 639, 199);
+	tgi_bar(STATUSX,STATUSY, WIDTH, HEIGHT);
 	tgi_setcolor(0);
 }
 
@@ -173,7 +179,7 @@ void drawCommandBar(char* text, bool showPrompt)
 {
 	int scale = 2;
 	tgi_setcolor(1);
-	tgi_bar(CMDLINEX+(6*scale*4),26,639,37);
+	tgi_bar(CMDLINEX+(6*scale*4),26,WIDTH,37);
 	//tgi_outtxt("url>",4, CMDLINEX, CMDLINEY, 2);
 	
 	if (text != 0)
@@ -319,14 +325,14 @@ void drawButton_Home(int x,int y, int id)
 	browserButtonCmdId[id] = id;
 
 	tgi_setcolor(0);
-	tgi_line(x+16,y+2,x+18,y+2);
-	tgi_line(x+13,y+3,x+19,y+3);
-	tgi_line(x+10,y+4,x+22,y+4);
-	tgi_line(x+7,y+5,x+25,y+5);
-	tgi_line(x+11,y+6,x+21,y+6);
-	tgi_line(x+11,y+7,x+21,y+7);
-	tgi_line(x+11,y+8,x+21,y+8);
-	tgi_line(x+11,y+9,x+21,y+9);
+	tgi_line(x+14,y+2,x+18,y+2);
+	tgi_line(x+11,y+3,x+19,y+3);
+	tgi_line(x+8,y+4,x+22,y+4);
+	tgi_line(x+5,y+5,x+25,y+5);
+	tgi_line(x+9,y+6,x+21,y+6);
+	tgi_line(x+9,y+7,x+21,y+7);
+	tgi_line(x+9,y+8,x+21,y+8);
+	tgi_line(x+9,y+9,x+21,y+9);
 	tgi_setcolor(1);
 }
 
@@ -373,21 +379,22 @@ void drawScreen(void)
 	tgi_init ();
     tgi_clear ();
 	
-	tgi_bar(0,0, 640, 200);
+	tgi_bar(0,0, WIDTH, HEIGHT);
 	tgi_setcolor(0);
 	
 	// rounded top corners (why not)
 	tgi_setpixel(0,0);
-	tgi_setpixel(639,0);
+	tgi_setpixel(WIDTH,0);
 	
-	tgi_line(0,2,TITLEX-5,2);tgi_line(TITLEX+(12*12)+5,2,639,2);
-	tgi_line(0,4,TITLEX-5,4);tgi_line(TITLEX+(12*12)+5,4,639,4);
-	tgi_line(0,6,TITLEX-5,6);tgi_line(TITLEX+(12*12)+5,6,639,6);
-	tgi_line(0,8,TITLEX-5,8);tgi_line(TITLEX+(12*12)+5,8,639,8);
-	tgi_line(0,10,639,10);
-	tgi_line(0,25,639,25);
-	tgi_line(0,PAGEY1-2,639,PAGEY1-2);
-	tgi_line(0,PAGEY2+2,639,PAGEY2+2);
+	tgi_line(0,2,TITLEX-5,2);tgi_line(TITLEX+(12*12)+5,2,WIDTH,2);
+	tgi_line(0,4,TITLEX-5,4);tgi_line(TITLEX+(12*12)+5,4,WIDTH,4);
+	tgi_line(0,6,TITLEX-5,6);tgi_line(TITLEX+(12*12)+5,6,WIDTH,6);
+	tgi_line(0,8,TITLEX-5,8);tgi_line(TITLEX+(12*12)+5,8,WIDTH,8);
+	
+	tgi_line(0,10,WIDTH,10);
+	tgi_line(0,25,WIDTH,25);
+	tgi_line(0,PAGEY1-1,WIDTH,PAGEY1-1);
+	tgi_line(0,PAGEY2+2,WIDTH,PAGEY2+2);
 	
 	// Draw buttons
 	drawButton_Reload(8,12,0);
@@ -398,14 +405,14 @@ void drawScreen(void)
 	drawButton_Exit(600,2,4);
 	
 	tgi_setcolor(0);
-	tgi_outtxt("1200",4,225,15,2);
+	tgi_outtxt("2400",4,225,15,2);
 	tgi_setcolor(1);
 	
 	
 	// Command bar (to clear when clicked)
 	browserCoordinates[4].x1 = 0;
 	browserCoordinates[4].y1 = 26;
-	browserCoordinates[4].x2 = 639;
+	browserCoordinates[4].x2 = WIDTH;
 	browserCoordinates[4].y2 = 37;
 	browserButtonCmdId[4] = 5;
 
@@ -506,12 +513,6 @@ void tgi_outtxt(char *text, int idx, int x1, int y1, int scale)
 				
 				if((tmp & 1) == 1) tgi_setcolor(0); else tgi_setcolor(1);
 				for(   ; b<scale*5; b++) tgi_setpixel(x1+b,yt);
-
-				//if((tmp & 16) == 16)  tgi_setpixel(x1+0,yt); //0,1
-				//if((tmp & 8) == 8)    tgi_setpixel(x1+1,yt); //2,3
-				//if((tmp & 4) == 4)    tgi_setpixel(x1+2,yt); //4,5
-				//if((tmp & 2) == 2)    tgi_setpixel(x1+3,yt); //6,7
-				//if((tmp & 1) == 1)    tgi_setpixel(x1+4,yt); //8,9
 			}
 			x1+=6*scale;
 		}
@@ -576,113 +577,114 @@ void processPage(void)
 	
 	for(zz=0;zz<inBufferIndex;zz++)
 	{	
-		if (stopRendering == true)
+		if (inBuffer[zz][0] == '*')
 		{
-			stopRendering = false;
-			break;
-		}
-
-		if(inBuffer[zz][0] == '*' && inBuffer[zz][1] == 't')
-		{
-			getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 1, param);
-			tgi_outtxt(param, strlen(param), margin+x1,y1,scale);
-			y1+=6;
-		}
-		
-		if(inBuffer[zz][0] == '*' && inBuffer[zz][1] == 'c')
-		{
-			tgi_setcolor(1);
-			tgi_bar(PAGEX1,PAGEY1, PAGEX2, PAGEY2);
-			tgi_setcolor(0);
-			margin=0;
-			scale=2;
-			x1 = PAGEX1;
-			y1 = PAGEY1;
-		}
-		
-		if(inBuffer[zz][0] == '*' && inBuffer[zz][1] == 's')
-		{
-			getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 1, param);
-			scale=atoi(param);
-		}
-		
-		if(inBuffer[zz][0] == '*' && inBuffer[zz][1] == 'm')
-		{
-			getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 1, param);
-			margin=atoi(param);
-		}
-		
-		if(inBuffer[zz][0] == '*' && inBuffer[zz][1] == 'g')
-		{
-			getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 1, param);
-			x1=PAGEX1+atoi(param)+margin;
-			
-			getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 2, param);
-			y1=PAGEY1+atoi(param);
-			
-			tgi_gotoxy(x1,y1);
-		}
-		
-		if(inBuffer[zz][0] == '*' && inBuffer[zz][1] == 'x')
-		{
-			getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 1, param);
-			tx1=x1+margin;
-			for(z=0;z<strlen(inBuffer[zz])-2;z++)
+			if(inBuffer[zz][1] == 't')
 			{
-				if(param[z] != ' ') tgi_setcolor(0); else tgi_setcolor(1);
-				for(b=1; b<scale+1; b++)
-				{
-					for(p=0;p<scale;p++)
-						tgi_setpixel(tx1,y1+p); 
-					tx1 +=b;
-				}
-				if(scale>1) tx1--;
+				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 1, param);
+				tgi_outtxt(param, strlen(param), margin+x1,y1,scale);
+				y1+=6;
+				continue;
 			}
-			y1+=scale;
-		}
-		
-		if(inBuffer[zz][0] == '*' && inBuffer[zz][1] == 'o')
-		{
-			getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 1, param); x1 = atoi(param);
-			getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 2, param); y1 = atoi(param);
-			getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 3, param); x2 = atoi(param);
-			tgi_setcolor(0);
-			//tgi_arc (x1, y1, x2*2, x2, 0, 180);
-			//tgi_arc (x1, y1, x2*2, x2, 180, 360);
-			tgi_ellipse (x1, y1, x2, tgi_imulround (x2, tgi_getaspectratio()));
-		}
-		
-		if(inBuffer[zz][0] == '*' && inBuffer[zz][1] == 'l')
-		{
-			getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 1, param); x1 = atoi(param);
-			getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 2, param); y1 = atoi(param);
-			getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 3, param); x2 = atoi(param);
-			getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 4, param); y2 = atoi(param);
-			tgi_setcolor(0);
-			tgi_line(x1,y1,x2,y2);
-		}
-		
-		if(inBuffer[zz][0] == '*' && inBuffer[zz][1] == 'b')
-		{
-			getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 1, param); x1 = atoi(param);
-			getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 2, param); y1 = atoi(param);
-			getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 3, page);
-			getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 4, param);
 			
-			p = strlen(param);
-			z2 = 6*p*scale;
+			if(inBuffer[zz][1] == 'c')
+			{
+				tgi_setcolor(1);
+				tgi_bar(PAGEX1,PAGEY1, PAGEX2, PAGEY2);
+				tgi_setcolor(0);
+				margin=0;
+				scale=2;
+				x1 = PAGEX1;
+				y1 = PAGEY1;
+				continue;
+			}
 			
-			tgi_setcolor(0);
-			tgi_box(x1,y1,x1+z2+6,y1+10,0);
-			tgi_outtxt(param, p, x1+5,y1+3, scale);
-			strcpy(links[linkcount],page);
+			if(inBuffer[zz][1] == 's')
+			{
+				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 1, param);
+				scale=atoi(param);
+				continue;
+			}
+			
+			if(inBuffer[zz][1] == 'm')
+			{
+				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 1, param);
+				margin=atoi(param);
+				continue;
+			}
+			
+			if(inBuffer[zz][1] == 'g')
+			{
+				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 1, param);
+				x1=PAGEX1+atoi(param)+margin;
+				
+				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 2, param);
+				y1=PAGEY1+atoi(param);
+				
+				tgi_gotoxy(x1,y1);
+				continue;
+			}
+			
+			if(inBuffer[zz][1] == 'x')
+			{
+				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 1, param);
 
-			linkCoordinates[linkcount].x1 = x1;
-			linkCoordinates[linkcount].y1 = y1;
-			linkCoordinates[linkcount].x2 = x1+z2+5;
-			linkCoordinates[linkcount].y2 = y1+10;
-			linkcount++;
+				for(z=0;z<strlen(inBuffer[zz])-2;z++)
+				{
+					if(param[z] != ' ') tgi_setcolor(0); else tgi_setcolor(1);
+					for(b=0; b<scale; b++)
+					{
+						for(p=0;p<scale;p++)
+							tgi_setpixel(x1+z+margin,y1+p); 
+					}
+				}
+				y1+=scale;
+				continue;
+			}
+			
+			if(inBuffer[zz][1] == 'o')
+			{
+				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 1, param); x1 = atoi(param);
+				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 2, param); y1 = atoi(param);
+				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 3, param); x2 = atoi(param);
+				tgi_setcolor(0);
+				tgi_ellipse (x1, y1, x2, tgi_imulround (x2, tgi_getaspectratio()));
+				continue;
+			}
+			
+			if(inBuffer[zz][1] == 'l')
+			{
+				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 1, param); x1 = atoi(param);
+				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 2, param); y1 = atoi(param);
+				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 3, param); x2 = atoi(param);
+				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 4, param); y2 = atoi(param);
+				tgi_setcolor(0);
+				tgi_line(x1,y1,x2,y2);
+				continue;
+			}
+			
+			if(inBuffer[zz][1] == 'b')
+			{
+				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 1, param); x1 = atoi(param);
+				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 2, param); y1 = atoi(param);
+				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 3, page);
+				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 4, param);
+				
+				p = strlen(param);
+				z2 = 6*p*scale;
+				
+				tgi_setcolor(0);
+				tgi_box(x1,y1,x1+z2+6,y1+10,0);
+				tgi_outtxt(param, p, x1+5,y1+3, scale);
+				strcpy(links[linkcount],page);
 
+				linkCoordinates[linkcount].x1 = x1;
+				linkCoordinates[linkcount].y1 = y1;
+				linkCoordinates[linkcount].x2 = x1+z2+5;
+				linkCoordinates[linkcount].y2 = y1+10;
+				linkcount++;
+				continue;
+			}
 		}
 	}
 	
@@ -803,7 +805,7 @@ void browserbuttonClick(struct Coordinates *coords, int command)
 				tgi_setcolor(0);
 				tgi_outtxt("2400",4,225,15,2);
 				tgi_setcolor(1);
-				//us_close();
+				us_close();
 				us_init2400();
 			}
 			else
@@ -812,7 +814,7 @@ void browserbuttonClick(struct Coordinates *coords, int command)
 				tgi_setcolor(0);
 				tgi_outtxt("1200",4,225,15,2);
 				tgi_setcolor(1);
-				//us_close();
+				us_close();
 				us_init1200();
 			}
 			return;
@@ -838,16 +840,16 @@ void browserbuttonClick(struct Coordinates *coords, int command)
 	}
 }
 
-int mouseClickHandler(int x, int y)
+bool mouseClickHandler(int x, int y)
 {
 	int tmp=0;
-	int clicked = 0;
+	bool clicked = false;
 
 	for (tmp=0;tmp<=browserButtonCount;tmp++)
 	{
 		if(inBounds(x, y, &browserCoordinates[tmp])==true)
 		{
-			clicked = 0;
+			clicked = false;
 			browserbuttonClick(&browserCoordinates[tmp], browserButtonCmdId[tmp]);
 			break;
 		}
@@ -857,7 +859,7 @@ int mouseClickHandler(int x, int y)
 	{
 		if(inBounds(x, y, &linkCoordinates[tmp]) == true)
 		{
-			clicked = 1;
+			clicked = true;
 			linkbuttonClick(&linkCoordinates[tmp], links[tmp]);
 			break;
 		}
@@ -878,15 +880,13 @@ int main ()
   int px = 0;
   int py = 0;
   int lastkey = -1;
-  int clicked = 0;
+  bool clicked = false;
   int periodx=0;
-  int timeClock = 0;
   
   fast();
   init();
-  us_init1200();
   drawScreen();
-  
+
   mouse_load_driver (&mouse_def_callbacks, mouse_static_stddrv);
   mouse_install (&mouse_def_callbacks, mouse_static_stddrv);
 
@@ -895,7 +895,9 @@ int main ()
   
   currPage[0] = 0;
   input[0] = 0;
-
+  
+  us_init2400();
+  
   while (1)
 	{
 		mouse_info (&mouseInfo);
@@ -904,7 +906,7 @@ int main ()
 		// so we double the x for 640 VDC
 		mouseInfo.pos.x *=2;
 		
-		if((mouseInfo.buttons & MOUSE_BTN_LEFT) != 0 && clicked == 0)
+		if((mouseInfo.buttons & MOUSE_BTN_LEFT) != 0 && clicked == false)
 			clicked = mouseClickHandler(mouseInfo.pos.x, mouseInfo.pos.y);
 		
 		if(px != mouseInfo.pos.x || py != mouseInfo.pos.y)
@@ -1004,7 +1006,7 @@ int main ()
 					idx=0;
 					gettingPage = false;
 					sayonce=0;
-					clicked=0;	
+					clicked=false;	
 					periodx=0;
 					drawPointer(mouseInfo.pos.x, mouseInfo.pos.y, px,py);
 				}
