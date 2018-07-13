@@ -429,7 +429,7 @@ void drawScreen(void)
 	tgi_outtxt(title, 12, TITLEX,TITLEY, 2);
 	drawCommandBar(NULL, true);
 	tgi_outtxt("url>",4, CMDLINEX, CMDLINEY, 2);
-	tgi_outtxt("command mode",12, STATUSX,STATUSY,2);
+	tgi_outtxt("terminal mode",13, STATUSX,STATUSY,2);
 
 }
 
@@ -543,15 +543,18 @@ void tgi_putc(char c, int scale)
 		if (cy >= PAGEY2)
 		{
 			tgi_setcolor(1);
-			tgi_bar(PAGEX1+1,PAGEY1+1, PAGEX2-1, PAGEY2-1);
+			tgi_bar(PAGEX1,PAGEY1, PAGEX2, PAGEY2);
 			cy = PAGEY1;
 		}
 	}
 	else
 	{
-		buf[0] = c;
-		tgi_outtxt(buf, 1,cx,cy,scale);
-		cx+=6*scale;
+		if(c != 10)
+		{
+			buf[0] = c;
+			tgi_outtxt(buf, 1,cx,cy,scale);
+			cx+=6*scale;
+		}
 	}
 }
 
@@ -705,7 +708,7 @@ void processPage(void)
 	
 	scale=2;
 	clearStatusBar();	
-	tgi_outtxt("command mode",12, STATUSX,STATUSY,scale);
+	tgi_outtxt("page loaded ",12, STATUSX,STATUSY,scale);
 }
 
 int handleMouseBug(int c, int lastkey)
