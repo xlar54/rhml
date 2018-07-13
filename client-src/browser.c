@@ -16,6 +16,9 @@
 #include <unistd.h>
 #include "userial.h"
 
+typedef unsigned char		uint8_t;
+typedef unsigned short		uint16_t;
+
 // vdc is scale 2, vic scale 1
 #define SCREEN_SCALE	2
 #define SCREEN_WIDTH	320 * SCREEN_SCALE
@@ -77,15 +80,15 @@ bool mouseClickHandler(int x, int y);
 bool inBounds(int x, int y, struct Coordinates *coords);
 
 // Terminal cursor x/y
-int cx = PAGEX1;
-int cy = PAGEY1;
+uint16_t cx = PAGEX1;
+uint16_t cy = PAGEY1;
 unsigned char c = 0;
 unsigned char d = 0;
-int promptx = CMDLINEX;
-int prompty = CMDLINEY;
+uint16_t promptx = CMDLINEX;
+uint16_t prompty = CMDLINEY;
 bool pageClearedFlag = false;
 struct mouse_info mouseInfo;
-int speed = 2400;
+uint16_t speed = 2400;
 
 char currPage[MAXFILENAMESZ];
 char input[MAXINPUTBUFFER];		// keyboard input buffer
@@ -567,7 +570,7 @@ void processPage(void)
   int x2 = 0;
   int y2 = 0;
   int yt = 0;
-  int z = 0;
+  register int z = 0;
   int z2 = 0;
   int p = 0;
   int tmp = 0;
@@ -576,6 +579,7 @@ void processPage(void)
   int margin = 0;
   int tx1 = 0;
   int b=0;
+  uint8_t bufferLen = 0;
   char page[80];
 	
 	linkcount = 0;
@@ -586,11 +590,13 @@ void processPage(void)
 	
 	for(zz=0;zz<inBufferIndex;zz++)
 	{	
+		bufferLen = strlen(inBuffer[zz]);
+		
 		if (inBuffer[zz][0] == '*')
 		{
 			if(inBuffer[zz][1] == 't')
 			{
-				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 1, param);
+				getSParam(',', inBuffer[zz], bufferLen, 1, param);
 				tgi_outtxt(param, strlen(param), margin+x1,y1,scale);
 				y1+=6;
 				continue;
@@ -610,24 +616,24 @@ void processPage(void)
 			
 			if(inBuffer[zz][1] == 's')
 			{
-				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 1, param);
+				getSParam(',', inBuffer[zz], bufferLen, 1, param);
 				scale=atoi(param);
 				continue;
 			}
 			
 			if(inBuffer[zz][1] == 'm')
 			{
-				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 1, param);
+				getSParam(',', inBuffer[zz], bufferLen, 1, param);
 				margin=atoi(param);
 				continue;
 			}
 			
 			if(inBuffer[zz][1] == 'g')
 			{
-				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 1, param);
+				getSParam(',', inBuffer[zz], bufferLen, 1, param);
 				x1=PAGEX1+atoi(param)+margin;
 				
-				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 2, param);
+				getSParam(',', inBuffer[zz], bufferLen, 2, param);
 				y1=PAGEY1+atoi(param);
 				
 				tgi_gotoxy(x1,y1);
@@ -636,11 +642,11 @@ void processPage(void)
 			
 			if(inBuffer[zz][1] == 'x')
 			{
-				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 1, param);
+				getSParam(',', inBuffer[zz], bufferLen, 1, param);
 
-				for(z=0;z<strlen(inBuffer[zz])-2;z++)
+				for(z=0;z<bufferLen-2;z++)
 				{
-					if(param[z] != ' ') tgi_setcolor(0); else tgi_setcolor(1);
+					tgi_setcolor(param[z] == ' ');
 					for(b=0; b<scale; b++)
 					{
 						for(p=0;p<scale;p++)
@@ -653,9 +659,9 @@ void processPage(void)
 			
 			if(inBuffer[zz][1] == 'o')
 			{
-				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 1, param); x1 = atoi(param);
-				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 2, param); y1 = atoi(param);
-				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 3, param); x2 = atoi(param);
+				getSParam(',', inBuffer[zz], bufferLen, 1, param); x1 = atoi(param);
+				getSParam(',', inBuffer[zz], bufferLen, 2, param); y1 = atoi(param);
+				getSParam(',', inBuffer[zz], bufferLen, 3, param); x2 = atoi(param);
 				tgi_setcolor(0);
 				tgi_ellipse (x1, y1, x2, tgi_imulround (x2, tgi_getaspectratio()));
 				continue;
@@ -663,10 +669,10 @@ void processPage(void)
 			
 			if(inBuffer[zz][1] == 'l')
 			{
-				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 1, param); x1 = atoi(param);
-				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 2, param); y1 = atoi(param);
-				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 3, param); x2 = atoi(param);
-				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 4, param); y2 = atoi(param);
+				getSParam(',', inBuffer[zz], bufferLen, 1, param); x1 = atoi(param);
+				getSParam(',', inBuffer[zz], bufferLen, 2, param); y1 = atoi(param);
+				getSParam(',', inBuffer[zz], bufferLen, 3, param); x2 = atoi(param);
+				getSParam(',', inBuffer[zz], bufferLen, 4, param); y2 = atoi(param);
 				tgi_setcolor(0);
 				tgi_line(x1,y1,x2,y2);
 				continue;
@@ -674,10 +680,10 @@ void processPage(void)
 			
 			if(inBuffer[zz][1] == 'b')
 			{
-				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 1, param); x1 = atoi(param);
-				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 2, param); y1 = atoi(param);
-				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 3, page);
-				getSParam(',', inBuffer[zz], strlen(inBuffer[zz]), 4, param);
+				getSParam(',', inBuffer[zz], bufferLen, 1, param); x1 = atoi(param);
+				getSParam(',', inBuffer[zz], bufferLen, 2, param); y1 = atoi(param);
+				getSParam(',', inBuffer[zz], bufferLen, 3, page);
+				getSParam(',', inBuffer[zz], bufferLen, 4, param);
 				
 				p = strlen(param);
 				z2 = 6*p*scale;

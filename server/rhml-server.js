@@ -3,12 +3,21 @@ var fs = require('fs');
  
 var sockets = [];
 var inqueue = "";
+
+function sleep(milliseconds) {
+  var start = new Date().getTime();
+  for (var i = 0; i < 1e7; i++) {
+    if ((new Date().getTime() - start) > milliseconds){
+      break;
+    }
+  }
+}
+
 /*
  * Method executed when data is received from a socket
  */
 function receiveData(socket, data) {
-	var d = data;//.toString(); //.toString();
-	console.log(d.charCodeAt(0));
+	var d = data;
 	
 	if(d.charCodeAt(0) == 13 || d.charCodeAt(0) == 10)
 	{
@@ -31,8 +40,6 @@ function receiveData(socket, data) {
 			inqueue = "";
 			return;
 		}
-		
-		console.log("GET:" + inqueue);
 		requestPage(socket, inqueue);
 		inqueue = "";
 	}
@@ -45,7 +52,7 @@ function receiveData(socket, data) {
 function requestPage(socket, page) {
 
 		page = page.toLowerCase();
-		console.log("Requested " + page);
+		console.log(socket.remoteAddress + " requested " + page);
 		
 		// Read the file and print its contents.
 		fs.readFile(page, 'utf8', function(err, data) {
@@ -67,7 +74,14 @@ function requestPage(socket, page) {
 			else
 			{
 				data += "\r*E\r";
-				socket.write(data);
+				for(var v=0;v<data.length;v++)
+				{
+					// slow down output just a bit (may be machine dependent)
+					// without this, some data loss occurs because data send is too fast
+					sleep(10);
+					socket.write(data.charAt(v));
+				}
+				//socket.write(data);
 			}
 		});
 }
@@ -87,11 +101,11 @@ function closeSocket(socket) {
  */
 function newSocket(socket) {
 	socket.setEncoding('utf8');
-	console.log('connected...');
+	console.log(socket.remoteAddress + ' connected');
 	sockets.push(socket);
 	
-	socket.write("*C\r");
-	socket.write("*C\r");
+	sleep(2000);
+	socket.write("\n");
 	requestPage(socket,"index.rhml");
 	
 	socket.on('data', function(data) {
@@ -106,5 +120,5 @@ function newSocket(socket) {
 var server = net.createServer(newSocket);
  
 // Listen on port 23
-console.log("Listening on port 23");
+console.log("\n\nRHML server listening on port 23");
 server.listen(23);

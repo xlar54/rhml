@@ -113,6 +113,8 @@ void us_init2400()
   cbm_k_setnam (us_name2400);
   cbm_k_open ();
   
+  //POKE(0xc8, (((int)rs232_read_buf) & 0xff));
+  //POKE(0xc9, (((int)rs232_read_buf)>>8) & 0xff);
   *RIBUF = (char*)(((int)rs232_read_buf & 0xff00) + 256);
   *ROBUF = (char*)(((int)rs232_write_buf & 0xff00) + 256);
 
