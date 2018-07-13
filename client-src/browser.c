@@ -24,9 +24,12 @@ typedef unsigned short		uint16_t;
 #define SCREEN_WIDTH	320 * SCREEN_SCALE
 #define SCREEN_HEIGHT	199
 
-#define FONT_WIDTH		5
-#define FONT_HEIGHT		5
-#define FONT_HIGHBIT	16
+#define FONT_WIDTH		5 //8 //5
+#define FONT_HEIGHT		5 //8 //5
+#define FONT_HIGHBIT	16 //128 //16
+#define SYS_FONT_SCALE	2
+#define BTN_TB_PADDING	3
+#define BTN_RL_PADDING	5
 
 #define PAGEX1	0
 #define PAGEY1	40
@@ -54,7 +57,7 @@ typedef unsigned short		uint16_t;
 
 void init(void);
 void drawScreen(void);
-void drawButton_Reload(int x,int y, int id);
+void drawButton_Reload(int x,int y, int id, int scale);
 void drawButton_Back(int x,int y, int id);
 void drawButton_Next(int x,int y, int id);
 void drawButton_Home(int x,int y, int id);
@@ -116,6 +119,69 @@ int browserButtonCount=6;
 
 char inBuffer[MAXLINESPERPAGE][MAXCOLSPERPAGE];
 int inBufferIndex = 0;
+/*
+int font[59][FONT_WIDTH] = { 
+{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, //20 " "       ;0x0B00
+{0x18, 0x18, 0x18, 0x18, 0x18, 0x00, 0x18, 0x00}, //21 "!"       ;0x0B08
+{0x6c, 0x6c, 0x6c, 0x00, 0x00, 0x00, 0x00, 0x00}, //22  "        ;0x0B10
+{0x36, 0x36, 0x7f, 0x36, 0x7f, 0x36, 0x36, 0x00}, //23 "#"       ;0x0B18
+{0x0c, 0x3f, 0x68, 0x3e, 0x0b, 0x7e, 0x18, 0x00}, //24 "0x"       ;0x0B20
+{0x60, 0x66, 0x0c, 0x18, 0x30, 0x66, 0x06, 0x00}, //25 "%"       ;0x0B28
+{0x38, 0x6c, 0x6c, 0x38, 0x6d, 0x66, 0x3b, 0x00}, //26 "&"       ;0x0B30
+{0x0c, 0x18, 0x30, 0x00, 0x00, 0x00, 0x00, 0x00}, //27 "'"       ;0x0B38
+{0x0c, 0x18, 0x30, 0x30, 0x30, 0x18, 0x0c, 0x00}, //28 "("       ;0x0B40
+{0x30, 0x18, 0x0c, 0x0c, 0x0c, 0x18, 0x30, 0x00}, //29 ")"       ;0x0B48
+{0x00, 0x18, 0x7e, 0x3c, 0x7e, 0x18, 0x00, 0x00}, //2A "*"       ;0x0B50
+{0x00, 0x18, 0x18, 0x7e, 0x18, 0x18, 0x00, 0x00}, //2B "+"       ;0x0B58
+{0x00, 0x00, 0x00, 0x00, 0x00, 0x18, 0x18, 0x30}, //2C ","       ;0x0B60
+{0x00, 0x00, 0x00, 0x7e, 0x00, 0x00, 0x00, 0x00}, //0D "-"       ;0x0B68
+{0x00, 0x00, 0x00, 0x00, 0x00, 0x18, 0x18, 0x00}, //2E "."       ;0x0B70
+{0x00, 0x06, 0x0c, 0x18, 0x30, 0x60, 0x00, 0x00}, //2F "/"       ;0x0B78
+{0x3c, 0x66, 0x6e, 0x7e, 0x76, 0x66, 0x3c, 0x00}, //30 "0"       ;0x0B80
+{0x18, 0x38, 0x18, 0x18, 0x18, 0x18, 0x7e, 0x00}, //31 "1"       ;0x0B88
+{0x3c, 0x66, 0x06, 0x0c, 0x18, 0x30, 0x7e, 0x00}, //32 "2"       ;0x0B90
+{0x3c, 0x66, 0x06, 0x1c, 0x06, 0x66, 0x3c, 0x00}, //33 "3"       ;0x0B98
+{0x0c, 0x1c, 0x3c, 0x6c, 0x7e, 0x0c, 0x0c, 0x00}, //34 "4"       ;0x0BA0
+{0x7e, 0x60, 0x7c, 0x06, 0x06, 0x66, 0x3c, 0x00}, //35 "5"       ;0x0BA8
+{0x1c, 0x30, 0x60, 0x7c, 0x66, 0x66, 0x3c, 0x00}, //36 "6"       ;0x0BB0
+{0x7e, 0x06, 0x0c, 0x18, 0x30, 0x30, 0x30, 0x00}, //37 "7"       ;0x0BB8
+{0x3c, 0x66, 0x66, 0x3c, 0x66, 0x66, 0x3c, 0x00}, //38 "8"       ;0x0BC0
+{0x3c, 0x66, 0x66, 0x3e, 0x06, 0x0c, 0x38, 0x00}, //39 "9"       ;0x0BC8
+{0x00, 0x00, 0x18, 0x18, 0x00, 0x18, 0x18, 0x00}, //3A ":"       ;0x0BD0
+{0x00, 0x00, 0x18, 0x18, 0x00, 0x18, 0x18, 0x30}, //3B ";"       ;0x0BD8
+{0x0c, 0x18, 0x30, 0x60, 0x30, 0x18, 0x0c, 0x00}, //3C "<"       ;0x0BE0
+{0x00, 0x00, 0x7e, 0x00, 0x7e, 0x00, 0x00, 0x00}, //3D "="       ;0x0BE8
+{0x30, 0x18, 0x0c, 0x06, 0x0c, 0x18, 0x30, 0x00}, //3E ">"       ;0x0BF0
+{0x3c, 0x66, 0x0c, 0x18, 0x18, 0x00, 0x18, 0x00}, //3F "?"       ;0x0BF8
+{0x3c, 0x66, 0x6e, 0x6a, 0x6e, 0x60, 0x3c, 0x00}, //40 "@"       ;0x0C00
+{0x3c, 0x66, 0x66, 0x7e, 0x66, 0x66, 0x66, 0x00}, //41 "A"       ;0x0C08
+{0x7c, 0x66, 0x66, 0x7c, 0x66, 0x66, 0x7c, 0x00}, //42 "B"       ;0x0C10
+{0x3c, 0x66, 0x60, 0x60, 0x60, 0x66, 0x3c, 0x00}, //43 "C"       ;0x0C18
+{0x78, 0x6c, 0x66, 0x66, 0x66, 0x6c, 0x78, 0x00}, //44 "D"       ;0x0C20
+{0x7e, 0x60, 0x60, 0x7c, 0x60, 0x60, 0x7e, 0x00}, //45 "E"       ;0x0C28
+{0x7e, 0x60, 0x60, 0x7c, 0x60, 0x60, 0x60, 0x00}, //46 "F"       ;0x0C30
+{0x3c, 0x66, 0x60, 0x6e, 0x66, 0x66, 0x3c, 0x00}, //47 "G"       ;0x0C38
+{0x66, 0x66, 0x66, 0x7e, 0x66, 0x66, 0x66, 0x00}, //48 "H"       ;0x0C40
+{0x7e, 0x18, 0x18, 0x18, 0x18, 0x18, 0x7e, 0x00}, //49 "I"       ;0x0C48
+{0x3e, 0x0c, 0x0c, 0x0c, 0x0c, 0x6c, 0x38, 0x00}, //4A "J"       ;0x0C50
+{0x66, 0x6c, 0x78, 0x70, 0x78, 0x6c, 0x66, 0x00}, //4B "K"       ;0x0C58
+{0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x7e, 0x00}, //4C "L"       ;0x0C60
+{0x63, 0x77, 0x7f, 0x6b, 0x6b, 0x63, 0x63, 0x00}, //4D "M"       ;0x0C68
+{0x66, 0x66, 0x76, 0x7e, 0x6e, 0x66, 0x66, 0x00}, //4E "N"       ;0x0C70
+{0x3c, 0x66, 0x66, 0x66, 0x66, 0x66, 0x3c, 0x00}, //4F "O"       ;0x0C78
+{0x7c, 0x66, 0x66, 0x7c, 0x60, 0x60, 0x60, 0x00}, //50 "P"       ;0x0C80
+{0x3c, 0x66, 0x66, 0x66, 0x6a, 0x6c, 0x36, 0x00}, //51 "Q"       ;0x0C88
+{0x7c, 0x66, 0x66, 0x7c, 0x6c, 0x66, 0x66, 0x00}, //52 "R"       ;0x0C90
+{0x3c, 0x66, 0x60, 0x3c, 0x06, 0x66, 0x3c, 0x00}, //53 "S"       ;0x0C98
+{0x7e, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x00}, //54 "T"       ;0x0CA0
+{0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x3c, 0x00}, //55 "U"       ;0x0CA8
+{0x66, 0x66, 0x66, 0x66, 0x66, 0x3c, 0x18, 0x00}, //56 "V"       ;0x0CB0
+{0x63, 0x63, 0x6b, 0x6b, 0x7f, 0x77, 0x63, 0x00}, //57 "W"       ;0x0CB8
+{0x66, 0x66, 0x3c, 0x18, 0x3c, 0x66, 0x66, 0x00}, //58 "X"       ;0x0CC0
+{0x66, 0x66, 0x66, 0x3c, 0x18, 0x18, 0x18, 0x00}, //59 "Y"       ;0x0CC8
+{0x7e, 0x06, 0x0c, 0x18, 0x30, 0x60, 0x7e, 0x00}}; //5A "Z"       ;$0CD0
+*/
+
 
 int font[59][FONT_WIDTH] = { 
 					{0,0,0,0,0},
@@ -187,18 +253,18 @@ void clearStatusBar(void)
 
 void drawCommandBar(char* text, bool showPrompt)
 {
-	int scale = 2;
+	uint8_t len = strlen(text);
+	
 	tgi_setcolor(1);
-	tgi_bar(CMDLINEX+(6*scale*4),26,SCREEN_WIDTH,37);
-	//tgi_outtxt("url>",4, CMDLINEX, CMDLINEY, 2);
+	tgi_bar(CMDLINEX+(SYS_FONT_SCALE*FONT_WIDTH*4),26,SCREEN_WIDTH,37);
+	
+	promptx = CMDLINEX+(FONT_WIDTH*SYS_FONT_SCALE*4);
 	
 	if (text != 0)
-		tgi_outtxt(text,strlen(text), CMDLINEX+(6*8), CMDLINEY, 2);
-	
-	promptx = CMDLINEX+(6*scale*4);
+		tgi_outtxt(text,len, promptx, CMDLINEY, SYS_FONT_SCALE);
 	
 	if (showPrompt == true)
-		drawPrompt(promptx,CMDLINEY,10);
+		drawPrompt(promptx,CMDLINEY,FONT_WIDTH);
 }
 
 void clearPage(void)
@@ -269,7 +335,7 @@ void init(void)
 
 }
 
-void drawButton_Reload(int x,int y, int id)
+void drawButton_Reload(int x,int y, int id, int scale)
 {
 	tgi_box(x,y,x+80,y+11,0);	// reload
 	browserCoordinates[id].x1 = x;
@@ -278,7 +344,7 @@ void drawButton_Reload(int x,int y, int id)
 	browserCoordinates[id].y2 = y+11;
 	browserButtonCmdId[id] = id;
 	
-	tgi_outtxt("reload",6,13,15,2);
+	tgi_outtxt("reload",6,13,15,scale);
 }
 
 void drawButton_Back(int x,int y, int id)
@@ -407,7 +473,7 @@ void drawScreen(void)
 	tgi_line(0,PAGEY2+2,SCREEN_WIDTH,PAGEY2+2);
 	
 	// Draw buttons
-	drawButton_Reload(8,12,0);
+	drawButton_Reload(8,12,0,SYS_FONT_SCALE);
 	drawButton_Back(100,12,1);
 	drawButton_Next(140,12,2);
 	drawButton_Home(180,12,6);
@@ -415,7 +481,7 @@ void drawScreen(void)
 	drawButton_Exit(600,2,4);
 	
 	tgi_setcolor(0);
-	tgi_outtxt("2400",4,225,15,2);
+	tgi_outtxt("2400",4,225,15,SYS_FONT_SCALE);
 	tgi_setcolor(1);
 	
 	
@@ -426,10 +492,10 @@ void drawScreen(void)
 	browserCoordinates[4].y2 = 37;
 	browserButtonCmdId[4] = 5;
 
-	tgi_outtxt(title, 12, TITLEX,TITLEY, 2);
+	tgi_outtxt(title, 12, TITLEX,TITLEY, SYS_FONT_SCALE);
 	drawCommandBar(NULL, true);
-	tgi_outtxt("url>",4, CMDLINEX, CMDLINEY, 2);
-	tgi_outtxt("terminal mode",13, STATUSX,STATUSY,2);
+	tgi_outtxt("url>",4, CMDLINEX, CMDLINEY, SYS_FONT_SCALE);
+	tgi_outtxt("terminal mode",13, STATUSX,STATUSY,SYS_FONT_SCALE);
 
 }
 
@@ -526,7 +592,7 @@ void tgi_outtxt(char *text, int idx, int x1, int y1, int scale)
 					ctr++;
 				}
 			}
-			x1+=(FONT_WIDTH+1)*scale;
+			x1+=(FONT_WIDTH)*scale;
 		}
 	}
 }
@@ -587,7 +653,7 @@ void processPage(void)
 	
 	linkcount = 0;
 	clearStatusBar();
-	tgi_outtxt("rendering...",12, STATUSX,STATUSY,scale);
+	tgi_outtxt("rendering...",12, STATUSX,STATUSY,SYS_FONT_SCALE);
 	
 	clearPage();
 	
@@ -601,7 +667,7 @@ void processPage(void)
 			{
 				getSParam(',', inBuffer[zz], bufferLen, 1, param);
 				tgi_outtxt(param, strlen(param), margin+x1,y1,scale);
-				y1+=6;
+				y1+=FONT_HEIGHT+1;
 				continue;
 			}
 			
@@ -688,27 +754,28 @@ void processPage(void)
 				getSParam(',', inBuffer[zz], bufferLen, 3, page);
 				getSParam(',', inBuffer[zz], bufferLen, 4, param);
 				
-				p = strlen(param);
-				z2 = 6*p*scale;
+				x2 = x1 + BTN_RL_PADDING + (FONT_WIDTH * strlen(param) * scale) + BTN_RL_PADDING;
+				y2 = y1 + BTN_TB_PADDING + FONT_HEIGHT + BTN_TB_PADDING;
 				
 				tgi_setcolor(0);
-				tgi_box(x1,y1,x1+z2+6,y1+10,0);
-				tgi_outtxt(param, p, x1+5,y1+3, scale);
+				tgi_box(x1,y1,x2,y2,0);
+				tgi_line(x1+5,y2+1,x2+1,y2+1);
+				tgi_line(x2+1,y1+3,x2+1,y2+1);
+				tgi_outtxt(param, strlen(param), x1+BTN_RL_PADDING,y1+BTN_TB_PADDING, scale);
 				strcpy(links[linkcount],page);
 
 				linkCoordinates[linkcount].x1 = x1;
 				linkCoordinates[linkcount].y1 = y1;
-				linkCoordinates[linkcount].x2 = x1+z2+5;
-				linkCoordinates[linkcount].y2 = y1+10;
+				linkCoordinates[linkcount].x2 = x2;
+				linkCoordinates[linkcount].y2 = y2;
 				linkcount++;
 				continue;
 			}
 		}
 	}
 	
-	scale=2;
 	clearStatusBar();	
-	tgi_outtxt("page loaded ",12, STATUSX,STATUSY,scale);
+	tgi_outtxt("page loaded ",12, STATUSX,STATUSY,SYS_FONT_SCALE);
 }
 
 int handleMouseBug(int c, int lastkey)
@@ -821,7 +888,7 @@ void browserbuttonClick(struct Coordinates *coords, int command)
 			{
 				speed = 2400;
 				tgi_setcolor(0);
-				tgi_outtxt("2400",4,225,15,2);
+				tgi_outtxt("2400",4,225,15,SYS_FONT_SCALE);
 				tgi_setcolor(1);
 				us_close();
 				us_init2400();
@@ -830,7 +897,7 @@ void browserbuttonClick(struct Coordinates *coords, int command)
 			{
 				speed = 1200;
 				tgi_setcolor(0);
-				tgi_outtxt("1200",4,225,15,2);
+				tgi_outtxt("1200",4,225,15,SYS_FONT_SCALE);
 				tgi_setcolor(1);
 				us_close();
 				us_init1200();
@@ -908,8 +975,8 @@ int main ()
   mouse_load_driver (&mouse_def_callbacks, mouse_static_stddrv);
   mouse_install (&mouse_def_callbacks, mouse_static_stddrv);
 
-  promptx = CMDLINEX+(6*scale*4);
-  drawPrompt(promptx,CMDLINEY,10);
+  promptx = CMDLINEX+(FONT_WIDTH*SYS_FONT_SCALE*4);
+  drawPrompt(promptx,CMDLINEY,FONT_WIDTH);
   
   currPage[0] = 0;
   input[0] = 0;
@@ -962,9 +1029,9 @@ int main ()
 				if (inputIdx > 0)
 				{
 					cbuf[0] = 32;
-					tgi_outtxt(cbuf,1, promptx, CMDLINEY, scale);
+					tgi_outtxt(cbuf,1, promptx, CMDLINEY, SYS_FONT_SCALE);
 					
-					promptx-=6*scale;
+					promptx-=FONT_WIDTH*SYS_FONT_SCALE;
 					drawPrompt(promptx,CMDLINEY,10);
 					inputIdx--;
 					input[inputIdx] = 0;
@@ -978,8 +1045,8 @@ int main ()
 				{
 					// add input char to command line
 					cbuf[0] = c;
-					tgi_outtxt(cbuf,1, promptx, CMDLINEY, scale);
-					promptx+=6*scale;
+					tgi_outtxt(cbuf,1, promptx, CMDLINEY, SYS_FONT_SCALE);
+					promptx+=FONT_WIDTH*SYS_FONT_SCALE;
 					drawPrompt(promptx,CMDLINEY,10);
 					input[inputIdx] = c;
 					inputIdx++;
@@ -1005,7 +1072,7 @@ int main ()
 				drawCommandBar(currPage, false);
 				
 				clearStatusBar();
-				tgi_outtxt("page loading",12, STATUSX,STATUSY,scale);
+				tgi_outtxt("page loading",12, STATUSX,STATUSY,SYS_FONT_SCALE);
 				sayonce=1;
 				cx = STATUSX+130;
 				cy = STATUSY;
@@ -1035,7 +1102,7 @@ int main ()
 					if(inBufferIndex % 3 == 0)
 					{
 						cbuf[0] = '.';
-						tgi_outtxt(cbuf,1, STATUSX+150+periodx, STATUSY, scale);
+						tgi_outtxt(cbuf,1, STATUSX+150+periodx, STATUSY, SYS_FONT_SCALE);
 						periodx+=6*scale;
 					}
 				}
