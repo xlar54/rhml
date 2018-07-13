@@ -1,6 +1,5 @@
 /* RHML Browser
 	Written By Scott Hutter
-	7/7/2018 - Initial beta release
 */
 
 #include <stdbool.h>
@@ -17,12 +16,18 @@
 #include <unistd.h>
 #include "userial.h"
 
-#define WIDTH	639
-#define HEIGHT	199
+// vdc is scale 2, vic scale 1
+#define SCREEN_SCALE	2
+#define SCREEN_WIDTH	320 * SCREEN_SCALE
+#define SCREEN_HEIGHT	199
+
+#define FONT_WIDTH		5
+#define FONT_HEIGHT		5
+#define FONT_HIGHBIT	16
 
 #define PAGEX1	0
 #define PAGEY1	40
-#define PAGEX2	WIDTH
+#define PAGEX2	SCREEN_WIDTH
 #define PAGEY2	183
 
 #define TITLEX	245
@@ -39,6 +44,8 @@
 #define MAXCOLSPERPAGE	80
 #define MAXLINESPERPAGE	100
 #define MAXFILENAMESZ	40
+
+#define MACHINE_RESET_VECTOR	"jsr $FF3D"
 
 // prototypes
 
@@ -107,7 +114,7 @@ int browserButtonCount=6;
 char inBuffer[MAXLINESPERPAGE][MAXCOLSPERPAGE];
 int inBufferIndex = 0;
 
-int font[59][5] = { 
+int font[59][FONT_WIDTH] = { 
 					{0,0,0,0,0},
 					{4,4,4,0,4},
 					{17,17,0,0,0},
@@ -171,7 +178,7 @@ int font[59][5] = {
 void clearStatusBar(void)
 {
 	tgi_setcolor(1);
-	tgi_bar(STATUSX,STATUSY, WIDTH, HEIGHT);
+	tgi_bar(STATUSX,STATUSY, SCREEN_WIDTH, SCREEN_HEIGHT);
 	tgi_setcolor(0);
 }
 
@@ -179,7 +186,7 @@ void drawCommandBar(char* text, bool showPrompt)
 {
 	int scale = 2;
 	tgi_setcolor(1);
-	tgi_bar(CMDLINEX+(6*scale*4),26,WIDTH,37);
+	tgi_bar(CMDLINEX+(6*scale*4),26,SCREEN_WIDTH,37);
 	//tgi_outtxt("url>",4, CMDLINEX, CMDLINEY, 2);
 	
 	if (text != 0)
@@ -379,22 +386,22 @@ void drawScreen(void)
 	tgi_init ();
     tgi_clear ();
 	
-	tgi_bar(0,0, WIDTH, HEIGHT);
+	tgi_bar(0,0, SCREEN_WIDTH, SCREEN_HEIGHT);
 	tgi_setcolor(0);
 	
 	// rounded top corners (why not)
 	tgi_setpixel(0,0);
-	tgi_setpixel(WIDTH,0);
+	tgi_setpixel(SCREEN_WIDTH,0);
 	
-	tgi_line(0,2,TITLEX-5,2);tgi_line(TITLEX+(12*12)+5,2,WIDTH,2);
-	tgi_line(0,4,TITLEX-5,4);tgi_line(TITLEX+(12*12)+5,4,WIDTH,4);
-	tgi_line(0,6,TITLEX-5,6);tgi_line(TITLEX+(12*12)+5,6,WIDTH,6);
-	tgi_line(0,8,TITLEX-5,8);tgi_line(TITLEX+(12*12)+5,8,WIDTH,8);
+	tgi_line(0,2,TITLEX-5,2);tgi_line(TITLEX+(12*12)+5,2,SCREEN_WIDTH,2);
+	tgi_line(0,4,TITLEX-5,4);tgi_line(TITLEX+(12*12)+5,4,SCREEN_WIDTH,4);
+	tgi_line(0,6,TITLEX-5,6);tgi_line(TITLEX+(12*12)+5,6,SCREEN_WIDTH,6);
+	tgi_line(0,8,TITLEX-5,8);tgi_line(TITLEX+(12*12)+5,8,SCREEN_WIDTH,8);
 	
-	tgi_line(0,10,WIDTH,10);
-	tgi_line(0,25,WIDTH,25);
-	tgi_line(0,PAGEY1-1,WIDTH,PAGEY1-1);
-	tgi_line(0,PAGEY2+2,WIDTH,PAGEY2+2);
+	tgi_line(0,10,SCREEN_WIDTH,10);
+	tgi_line(0,25,SCREEN_WIDTH,25);
+	tgi_line(0,PAGEY1-1,SCREEN_WIDTH,PAGEY1-1);
+	tgi_line(0,PAGEY2+2,SCREEN_WIDTH,PAGEY2+2);
 	
 	// Draw buttons
 	drawButton_Reload(8,12,0);
@@ -412,7 +419,7 @@ void drawScreen(void)
 	// Command bar (to clear when clicked)
 	browserCoordinates[4].x1 = 0;
 	browserCoordinates[4].y1 = 26;
-	browserCoordinates[4].x2 = WIDTH;
+	browserCoordinates[4].x2 = SCREEN_WIDTH;
 	browserCoordinates[4].y2 = 37;
 	browserButtonCmdId[4] = 5;
 
@@ -487,6 +494,8 @@ void tgi_outtxt(char *text, int idx, int x1, int y1, int scale)
 	int p = 0;
 	int yt = 0;
 	int b = 0;
+	int ctr = 0;
+	int byt = 0;
 	
 	for(z=0;z<idx;z++)
 	{
@@ -495,26 +504,26 @@ void tgi_outtxt(char *text, int idx, int x1, int y1, int scale)
 	
 		if(p>-1 && p<91)
 		{
-			for(z2=0;z2<5;z2++)
+			for(z2=0;z2<FONT_WIDTH;z2++)
 			{
 				yt=y1+z2;
-				tmp = font[p][z2];                                       
-				if((tmp & 16)==16) tgi_setcolor(0); else tgi_setcolor(1);
-				for(b=0; b<scale*1; b++) tgi_setpixel(x1+b,yt); 
+				tmp = font[p][z2];
+				b = 0;
+				ctr = 1;
+				
+				for(byt=FONT_HIGHBIT; byt>0; byt/=2)
+				{
+					tgi_setcolor(!(tmp & byt));
 
-				if((tmp & 8) == 8) tgi_setcolor(0); else tgi_setcolor(1);
-				for(   ; b<scale*2; b++) tgi_setpixel(x1+b,yt);
-				
-				if((tmp & 4) == 4) tgi_setcolor(0); else tgi_setcolor(1);
-				for(   ; b<scale*3; b++) tgi_setpixel(x1+b,yt);
-				
-				if((tmp & 2) == 2) tgi_setcolor(0); else tgi_setcolor(1);
-				for(   ; b<scale*4; b++) tgi_setpixel(x1+b,yt);
-				
-				if((tmp & 1) == 1) tgi_setcolor(0); else tgi_setcolor(1);
-				for(   ; b<scale*5; b++) tgi_setpixel(x1+b,yt);
+					while(b<scale*ctr)
+					{
+						tgi_setpixel(x1+b,yt);
+						b++;
+					}
+					ctr++;
+				}
 			}
-			x1+=6*scale;
+			x1+=(FONT_WIDTH+1)*scale;
 		}
 	}
 }
@@ -822,7 +831,7 @@ void browserbuttonClick(struct Coordinates *coords, int command)
 		case 4:  
 		{
 			// exit
-			asm("jsr $FF3D");
+			asm(MACHINE_RESET_VECTOR);
 			break;
 		}
 		case 5:
