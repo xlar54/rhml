@@ -13,13 +13,17 @@ char rs232_write_buf[512];
 //char** ROBUF = (char**)0x029d;
 
 // c64 rs-232 input and output buffer pointers
-//char** RIBUF = (char**)0x00f7;
-//char** ROBUF = (char**)0x00f9;
+#ifdef __C64__
+	char** RIBUF = (char**)0x00f7;
+	char** ROBUF = (char**)0x00f9;
+#endif
+
 
 // c128 rs-232 input and output buffer pointers
-char** RIBUF = (char**)0x00c8;
-char** ROBUF = (char**)0x00ca;
-
+#ifdef __C128__
+	char** RIBUF = (char**)0x00c8;
+	char** ROBUF = (char**)0x00ca;
+#endif
 
 //bypass cc65 Charter translation
 //static unsigned char us_name300[] = {0x06, 0x00, 0x00}; //300 8N1
@@ -107,14 +111,10 @@ void us_init2400()
   //unsigned char __fastcall__ (*cbm_k_getin)(void) = 0xffe4;
   
   // open rs232 channel
-  //POKE(2579,113);
-  //POKE(2578,0);
   cbm_k_setlfs (2,2,0);
   cbm_k_setnam (us_name2400);
   cbm_k_open ();
-  
-  //POKE(0xc8, (((int)rs232_read_buf) & 0xff));
-  //POKE(0xc9, (((int)rs232_read_buf)>>8) & 0xff);
+
   *RIBUF = (char*)(((int)rs232_read_buf & 0xff00) + 256);
   *ROBUF = (char*)(((int)rs232_write_buf & 0xff00) + 256);
 

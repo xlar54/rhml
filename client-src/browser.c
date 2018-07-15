@@ -8,7 +8,15 @@
 #include <conio.h>
 #include <ctype.h>
 #include <cc65.h>
+
+#ifdef __C128__
 #include <c128.h>
+#endif
+
+#ifdef __C64__
+#include <c64.h>
+#endif
+
 #include <tgi.h>
 #include <stdio.h>
 #include <mouse.h>
@@ -20,14 +28,30 @@ typedef unsigned char		uint8_t;
 typedef unsigned short		uint16_t;
 
 // vdc is scale 2, vic scale 1
+#ifdef __C128__
 #define SCREEN_SCALE	2
+#endif
+
+#ifdef __C64__
+#define SCREEN_SCALE	1
+#endif
+
+
 #define SCREEN_WIDTH	320 * SCREEN_SCALE
 #define SCREEN_HEIGHT	199
 
 #define FONT_WIDTH		5 //8 //5
 #define FONT_HEIGHT		5 //8 //5
 #define FONT_HIGHBIT	16 //128 //16
+
+#ifdef __C128__
 #define SYS_FONT_SCALE	2
+#endif
+
+#ifdef __C64__
+#define SYS_FONT_SCALE	1
+#endif
+
 #define BTN_TB_PADDING	3
 #define BTN_RL_PADDING	5
 
@@ -36,7 +60,14 @@ typedef unsigned short		uint16_t;
 #define PAGEX2	SCREEN_WIDTH
 #define PAGEY2	183
 
+#ifdef __C128__
 #define TITLEX	245
+#endif
+
+#ifdef __C64__
+#define TITLEX	90
+#endif
+
 #define TITLEY	3
 
 #define CMDLINEX 5
@@ -321,8 +352,15 @@ void init(void)
 	int err = 0;
 	
 	cprintf ("initializing...\r\n");
-    
+
+#ifdef __C128__    
 	tgi_load_driver("c128-vdc.tgi");
+#endif
+
+#ifdef __C64__
+	tgi_load_driver("c64-hi.tgi");
+#endif
+
 	tgi_init();
 	
     err = tgi_geterror ();
@@ -478,7 +516,7 @@ void drawScreen(void)
 	drawButton_Next(140,12,2);
 	drawButton_Home(180,12,6);
 	drawButton_Speed(220,12,3);
-	drawButton_Exit(600,2,4);
+	drawButton_Exit(SCREEN_WIDTH - 39,2,4);
 	
 	tgi_setcolor(0);
 	tgi_outtxt("2400",4,225,15,SYS_FONT_SCALE);
@@ -499,7 +537,8 @@ void drawScreen(void)
 
 }
 
-void getSParam(char delimiter, char* buf,  int size, int param, char *out) {
+void getSParam(char delimiter, char* buf,  int size, int param, char *out) 
+{
     
     int idx =0;
     int pcount=-1;
@@ -566,6 +605,8 @@ void tgi_outtxt(char *text, int idx, int x1, int y1, int scale)
 	int ctr = 0;
 	int byt = 0;
 	
+	tgi_setcolor(0);
+	
 	for(z=0;z<idx;z++)
 	{
 		p = text[z]-32;
@@ -586,7 +627,8 @@ void tgi_outtxt(char *text, int idx, int x1, int y1, int scale)
 
 					while(b<scale*ctr)
 					{
-						tgi_setpixel(x1+b,yt);
+						if(tmp & byt)
+							tgi_setpixel(x1+b,yt);
 						b++;
 					}
 					ctr++;
@@ -786,7 +828,14 @@ int handleMouseBug(int c, int lastkey)
 	// it by checking the pressed key (212) and injecting
 	// into the keyboard buffer.  But it does this every
 	// cycle, so we have to compare to last key pressed.
+	
+#ifdef __C128__
 	pk = PEEK(212);
+#endif
+
+#ifdef __C64__
+	pk = PEEK(212);
+#endif
 	if(pk == 56)
 	{
 	  c=0;
@@ -967,8 +1016,10 @@ int main ()
   int lastkey = -1;
   bool clicked = false;
   int periodx=0;
-  
+
+#ifdef __C128__
   fast();
+#endif
   init();
   drawScreen();
 
@@ -980,8 +1031,14 @@ int main ()
   
   currPage[0] = 0;
   input[0] = 0;
-  
+
+#ifdef __C128__
   us_init2400();
+#endif
+
+#ifdef __C64__
+  us_init1200();
+#endif
   
   while (1)
 	{
@@ -989,18 +1046,19 @@ int main ()
 		
 		// mouse driver is for 320 screen
 		// so we double the x for 640 VDC
+#ifdef __C128__
 		mouseInfo.pos.x *=2;
+#endif
 		
 		if((mouseInfo.buttons & MOUSE_BTN_LEFT) != 0 && clicked == false)
 			clicked = mouseClickHandler(mouseInfo.pos.x, mouseInfo.pos.y);
 		
 		if(px != mouseInfo.pos.x || py != mouseInfo.pos.y)
 		{
-			// VDC ONLY
+			// software sprite 
 			drawPointer(mouseInfo.pos.x, mouseInfo.pos.y, px,py);
 			px=mouseInfo.pos.x;
 			py=mouseInfo.pos.y;
-			// END VDC ONLY
 		}
 
 	  c = kbhit();
