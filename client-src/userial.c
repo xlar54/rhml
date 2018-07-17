@@ -109,30 +109,25 @@ void us_aprintf(const char* format, ... )
 void us_init2400()
 {
   //unsigned char __fastcall__ (*cbm_k_getin)(void) = 0xffe4;
+  *RIBUF = (char*)(((int)rs232_read_buf & 0xff00) + 256);
+  *ROBUF = (char*)(((int)rs232_write_buf & 0xff00) + 256); 
   
   // open rs232 channel
   cbm_k_setlfs (2,2,0);
   cbm_k_setnam (us_name2400);
   cbm_k_open ();
-
-  *RIBUF = (char*)(((int)rs232_read_buf & 0xff00) + 256);
-  *ROBUF = (char*)(((int)rs232_write_buf & 0xff00) + 256);
-
 }
 
 void us_init1200()
 {
   //unsigned char __fastcall__ (*cbm_k_getin)(void) = 0xffe4;
-
+  *RIBUF = (char*)(((int)rs232_read_buf & 0xff00) + 256);
+  *ROBUF = (char*)(((int)rs232_write_buf & 0xff00) + 256);
+  
   // open rs232 channel
   cbm_k_setlfs (2,2,0);
   cbm_k_setnam (us_name1200);
   cbm_k_open ();
-  
-  *RIBUF = (char*)(((int)rs232_read_buf & 0xff00) + 256);
-  *ROBUF = (char*)(((int)rs232_write_buf & 0xff00) + 256);
-  
-
 }
 
 void us_close(void)
