@@ -309,7 +309,11 @@ void drawScreen(void)
 	drawButton_Exit(SCREEN_WIDTH - 39,2,4);
 	
 	tgi_setcolor(0);
+#ifdef __C128__
 	tgi_outtxt("2400",4,225,15,SYS_FONT_SCALE);
+#else
+	tgi_outtxt("1200",4,225,15,SYS_FONT_SCALE);
+#endif
 	tgi_setcolor(1);
 	
 	
