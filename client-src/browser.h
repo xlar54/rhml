@@ -37,17 +37,7 @@ typedef unsigned short		uint16_t;
 #define SCREEN_WIDTH	320 * SCREEN_SCALE
 #define SCREEN_HEIGHT	199
 
-#define FONT_WIDTH		5 //8 //5
-#define FONT_HEIGHT		5 //8 //5
-#define FONT_HIGHBIT	16 //128 //16
 
-#ifdef __C128__
-#define SYS_FONT_SCALE	2
-#endif
-
-#ifdef __C64__
-#define SYS_FONT_SCALE	1
-#endif
 
 #define BTN_TB_PADDING	3
 #define BTN_RL_PADDING	5

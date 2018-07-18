@@ -1,5 +1,17 @@
-#ifndef RHML_FONT
-#define RHML_FONT
+#ifndef _RHML_FONT_
+#define _RHML_FONT_
+
+#define FONT_WIDTH		5 //8 //5
+#define FONT_HEIGHT		5 //8 //5
+#define FONT_HIGHBIT	16 //128 //16
+
+#ifdef __C128__
+#define SYS_FONT_SCALE	2
+#endif
+
+#ifdef __C64__
+#define SYS_FONT_SCALE	1
+#endif
 
 int font[59][FONT_WIDTH] = { 
 					{0,0,0,0,0},

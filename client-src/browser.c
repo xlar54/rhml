@@ -3,12 +3,11 @@
 */
 
 #include "browser.h"
+#include "font.h"
 
 // Terminal cursor x/y
 uint16_t cx = PAGEX1;
 uint16_t cy = PAGEY1;
-unsigned char c = 0;
-unsigned char d = 0;
 uint16_t promptx = CMDLINEX;
 uint16_t prompty = CMDLINEY;
 bool pageClearedFlag = false;
@@ -36,51 +35,22 @@ struct Coordinates browserCoordinates[7];
 int browserButtonCmdId[7];
 int browserButtonCount=6;
 
-#ifdef __C64__
-
-static const struct ser_params serialParams = {
-    SER_BAUD_2400,      /* Baudrate */
-    SER_BITS_8,         /* Number of data bits */
-    SER_STOP_1,         /* Number of stop bits */
-    SER_PAR_NONE,       /* Parity setting */
-    SER_HS_NONE         /* Type of handshake to use */
-};
-
-#endif
-
-
 //char history[1][80];
 //int historycount = 0;
 
 char inBuffer[MAXLINESPERPAGE][MAXCOLSPERPAGE];
 int inBufferIndex = 0;
 
-
 uint8_t serialGet()
 {
-	uint8_t c;
-	
-#ifdef __C128__
+	uint8_t c = 0;
 	c = us_getc();
-#endif
-
-#ifdef __C64__
-	ser_get(&c);
-#endif
-
 	return c;
 }
 
 void serialPut(uint8_t c)
 {
-#ifdef __C128__
-		us_putc(c);
-#endif
-
-#ifdef __C64__
-		ser_put(c);
-		//us_putc(request[ctr]);
-#endif
+	us_putc(c);
 }
 
 void clearStatusBar(void)
@@ -158,7 +128,7 @@ void drawPointer(int x, int y, int px, int py)
 void init(void)
 {
 	int err = 0;
-	
+	uint8_t c = 0;
 	cprintf ("initializing...\r\n");
 	
 #ifdef __C128__
@@ -167,18 +137,7 @@ void init(void)
 #endif
 
 #ifdef __C64__
-	//us_init1200();
-	err = ser_load_driver("c64-up2400.ser");
-	if (err != 0)
-	{
-		ser_open(&serialParams);
-		ser_ioctl(1, NULL);
-	}
-	else
-	{
-		cprintf("Error loading serial driver.\r\n");
-		exit(EXIT_FAILURE);
-	}
+	us_init1200();
 #endif
 
 #ifdef __C128__    
@@ -196,13 +155,11 @@ void init(void)
 		cprintf ("Error #%d initializing graphics.\r\n%s\r\n",err, tgi_geterrormsg (err));
 		exit (EXIT_FAILURE);
     };
-	
-    cprintf ("ok.\n\r");
-	
+
 	mouse_load_driver (&mouse_def_callbacks, mouse_static_stddrv);
 	mouse_install (&mouse_def_callbacks, mouse_static_stddrv);
 	
-
+	cprintf ("ok.\n\r");
 
 }
 
@@ -839,28 +796,29 @@ bool mouseClickHandler(int x, int y)
 
 int main ()
 {
-  
-  int idx = 0;
-  int tmp = 0;
-  int scale = 2;
-  bool gettingPage = false;
-  char cbuf[1];
-  int sayonce = 0;
-  int px = 0;
-  int py = 0;
-  int lastkey = -1;
-  bool clicked = false;
-  int periodx=0;
+	int idx = 0;
+	int tmp = 0;
+	int scale = 2;
+	bool gettingPage = false;
+	char cbuf[1];
+	int sayonce = 0;
+	int px = 0;
+	int py = 0;
+	int lastkey = -1;
+	bool clicked = false;
+	int periodx=0;
+	uint8_t d = 0;
+	uint8_t c = 0;
 
-  init();
-  drawScreen();
+	init();
+	drawScreen();
+	
+	promptx = CMDLINEX+(FONT_WIDTH*SYS_FONT_SCALE*4);
+	drawPrompt(promptx,CMDLINEY,FONT_WIDTH);
 
-  promptx = CMDLINEX+(FONT_WIDTH*SYS_FONT_SCALE*4);
-  drawPrompt(promptx,CMDLINEY,FONT_WIDTH);
-  
-  currPage[0] = 0;
-  input[0] = 0;
-
+	currPage[0] = 0;
+	input[0] = 0;
+	
 	while (1)
 	{
 		mouse_info (&mouseInfo);
@@ -884,11 +842,8 @@ int main ()
 		}
 
 		c = kbhit();
-		d = serialGet();
-
 		c = handleMouseBug(c, lastkey);
-	  
-  
+
 		if(c != 0)
 		{
 			c = cgetc();
@@ -936,8 +891,9 @@ int main ()
 			}
 		}
 
-
-		if (d !=0)
+		d = serialGet();
+		
+		if (d != 0)
 		{
 			if (idx == 0)
 				gettingPage = (d == '*' ? true : false);
@@ -990,7 +946,7 @@ int main ()
 			}
 			else
 				tgi_putc(d,scale);
-		}
+		} 
 	}
 
 	return 0;

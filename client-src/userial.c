@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <cbm.h>
-#include <peekpoke.h>
 
 void petscii_to_ascii (char *str);
 
