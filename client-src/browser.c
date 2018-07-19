@@ -141,14 +141,16 @@ void init(void)
 #endif
 
 #ifdef __C128__    
-	tgi_load_driver("c128-vdc.tgi");
+	//tgi_load_driver("c128-vdc.tgi");
+	tgi_install(tgi_static_stddrv);
 #endif
 
 #ifdef __C64__
-	tgi_load_driver("c64-hi.tgi");
+	//tgi_load_driver("c64-hi.tgi");
+	tgi_install(tgi_static_stddrv);
 #endif
 
-	tgi_init();
+	//tgi_init();
 	
     err = tgi_geterror ();
     if (err  != TGI_ERR_OK) {

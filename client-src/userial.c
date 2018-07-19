@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <cbm.h>
+#include <peekpoke.h>
+#include <errno.h>
 
 void petscii_to_ascii (char *str);
 
@@ -37,9 +39,10 @@ void us_putc(char c)
   cbm_k_bsout(c);
 }
 
-char us_getc() {
-  cbm_k_chkin(2);
-  return cbm_k_getin();
+char us_getc() 
+{
+	cbm_k_chkin(2);
+	return cbm_k_getin();
 }
 
 void us_read(char* str, unsigned char len)
