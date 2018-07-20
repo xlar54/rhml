@@ -1,4 +1,4 @@
-cl65  -O -t c64 browser.c userial.c -o browser64.prg
+cl65  -O -t c64 browser.c userial.c nmi_trampoline.s -o browser64.prg
 del *.o
 del *.o65
 del /Q ..\client\c64\*.*

@@ -31,6 +31,7 @@ typedef unsigned short		uint16_t;
 
 #ifdef __C64__
 #define SCREEN_SCALE	1
+extern install_nmi_trampoline();
 #endif
 
 

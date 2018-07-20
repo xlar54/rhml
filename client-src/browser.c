@@ -147,6 +147,7 @@ void init(void)
 
 #ifdef __C64__
 	//tgi_load_driver("c64-hi.tgi");
+	install_nmi_trampoline();
 	tgi_install(tgi_static_stddrv);
 #endif
 
@@ -525,6 +526,12 @@ void processPage(void)
 			{
 				getSParam(',', inBuffer[zz], bufferLen, 1, param);
 				scale=atoi(param);
+				
+				#ifdef __C64__
+					if(scale > 1)
+						scale--;
+				#endif
+				
 				continue;
 			}
 			
