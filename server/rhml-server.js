@@ -13,6 +13,45 @@ function sleep(milliseconds) {
   }
 }
 
+var rle = (function () {
+    var decode = function (input) {
+        var repeat = /^\d+/.exec(input), character;
+        if (repeat === null) {
+            return "";
+        }
+
+        repeat = repeat[0];
+        character = input[repeat.length];
+        return new Array(+repeat + 1).join(character) + decode(input.substr((repeat + character).length));
+    };
+
+    return {
+        encode: function (input) {
+            var i = 0, j = input.length, output = "", lastCharacter, currentCharCount;
+                for (; i < j; ++i) {
+                    if (typeof lastCharacter === "undefined") {
+                        lastCharacter = input[i];
+                        currentCharCount = 1;
+                        continue;
+                    }
+                    
+                    if (input[i] !== lastCharacter) {
+                        output += currentCharCount + lastCharacter;
+                        lastCharacter = input[i];                        
+                        currentCharCount = 1;
+                        continue;
+                    }
+                    
+                    currentCharCount++; 
+                }
+
+                return output + (currentCharCount + lastCharacter);
+        },
+        decode: decode   
+    };    
+}());
+
+
 /*
  * Method executed when data is received from a socket
  */
@@ -51,11 +90,52 @@ function receiveData(socket, data) {
 
 function requestPage(socket, page) {
 
+		sleep(300);
 		page = page.toLowerCase();
 		console.log(socket.remoteAddress + " requested " + page);
 		
+		var lineReader = require('readline').createInterface({
+		  input: require('fs').createReadStream(page)
+		});
+
+		lineReader.on('line', function (line) {
+		  
+			if(line.substring(0,3) == "*X,")
+			{
+				var newlin = "";
+				line = line.substring(3);
+				for(var t=0;t<line.length;t++)
+				{
+					if(line.charAt(t) != ' ')
+						newlin += "X";
+					else
+						newlin += " ";
+				}
+
+				line = "*X," + rle.encode(newlin)+"\r";
+				
+			}
+					
+			for(var v=0;v<line.length;v++)
+			{
+				// slow down output just a bit (may be machine dependent)
+				// without this, some data loss occurs because data send is too fast
+				sleep(20);
+				socket.write(line.charAt(v));
+			}
+			sleep(20);
+			socket.write("\r");
+		  
+		}).on('close', function() {
+			
+			sleep(60);
+			socket.write("*E\r");
+			console.log("<EOF>");
+			
+		});
+		
 		// Read the file and print its contents.
-		fs.readFile(page, 'utf8', function(err, data) {
+		/*fs.readFile(page, 'utf8', function(err, data) {
 			if(err !== null)
 			{
 				fs.readFile("404.rhml", 'utf8', function(err, data) {
@@ -83,7 +163,7 @@ function requestPage(socket, page) {
 				}
 				//socket.write(data);
 			}
-		});
+		});*/
 }
  
 /*

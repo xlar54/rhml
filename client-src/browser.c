@@ -489,6 +489,12 @@ void processPage(void)
   int b=0;
   uint8_t bufferLen = 0;
   char page[80];
+    			
+char rleValBuf[5];
+char rleLineBuf[80];
+uint8_t rleLineIdx = 0;
+uint8_t rleValIdx = 0;
+uint8_t rleVal = 0;
 	
 	linkcount = 0;
 	clearStatusBar();
@@ -557,10 +563,29 @@ void processPage(void)
 			if(inBuffer[zz][1] == 'x')
 			{
 				getSParam(',', inBuffer[zz], bufferLen, 1, param);
-
-				for(z=0;z<bufferLen-2;z++)
+				rleLineIdx = 0;
+				
+				// Decode the RLE
+				for(z=0;z<strlen(param);z++)
 				{
-					tgi_setcolor(param[z] == ' ');
+					if(param[z] != ' ' && param[z] != 'x')
+					{
+						rleValBuf[rleValIdx++] = param[z];
+					}
+					else
+					{
+						rleValBuf[rleValIdx] = 0;
+						rleValIdx = 0;
+						rleVal = atoi(rleValBuf);
+						
+						for(tmp=0;tmp<rleVal;tmp++)
+							rleLineBuf[rleLineIdx++] = param[z];
+					}
+				}
+					
+				for(z=0;z<rleLineIdx;z++)
+				{	
+					tgi_setcolor(rleLineBuf[z] == ' ');
 					for(b=0; b<scale; b++)
 					{
 						for(p=0;p<scale;p++)
