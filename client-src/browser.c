@@ -25,6 +25,12 @@ struct Coordinates {
 	int y2;
 };
 
+struct Icon {
+	uint8_t width;
+	uint8_t height;
+	char **data;
+};
+
 // link buttons rendered on a page
 char links[MAXLINKS][MAXFILENAMESZ];
 struct Coordinates linkCoordinates[MAXLINKS];
@@ -166,12 +172,38 @@ void init(void)
 
 }
 
+void draw_icon(int x, int y, struct Icon* icon)
+{
+	int r =0;
+	int c = 0;
+	int z = 0;
+	int tmp = 0;
+	int tmpx = 0;
+	
+	for(r=0;r<icon->height;r++)
+	{
+		tmpx=x;
+		for(c=0;c<icon->width;c++)
+		{
+			tgi_setcolor(icon->data[r][c] == ' ');
+			
+			for(z=0;z<SCREEN_SCALE;z++)
+			{
+				tgi_setpixel(tmpx+c,y+r);
+				tmpx++;
+			}
+			tmpx--;
+			
+		}
+	}
+}
+
 void drawButton_Reload(int x,int y, int id, int scale)
 {
-	tgi_box(x,y,x+80,y+11,0);	// reload
+	tgi_box(x,y,x+(40*SCREEN_SCALE),y+11,0);	// reload
 	browserCoordinates[id].x1 = x;
 	browserCoordinates[id].y1 = y;
-	browserCoordinates[id].x2 = x+80;
+	browserCoordinates[id].x2 = x+(40*SCREEN_SCALE);
 	browserCoordinates[id].y2 = y+11;
 	browserButtonCmdId[id] = id;
 	
@@ -180,75 +212,97 @@ void drawButton_Reload(int x,int y, int id, int scale)
 
 void drawButton_Back(int x,int y, int id)
 {
-	tgi_box(x,y,x+30,y+11,0);	// back
+	struct Icon icon;
+	icon.width = 8;
+	icon.height = 9;
+	icon.data = (char **)malloc(sizeof(char) * icon.width * icon.height);
+	
+	icon.data[0] = "        ";
+	icon.data[1] = "   *    ";
+	icon.data[2] = "  **    ";
+	icon.data[3] = " *******";
+	icon.data[4] = "********";
+	icon.data[5] = " *******";
+	icon.data[6] = "  **    ";
+	icon.data[7] = "   *    ";
+	icon.data[8] = "        ";
+	
+	tgi_box(x,y,x+(15*SCREEN_SCALE),y+11,0);	// back
 	browserCoordinates[id].x1 = x;
 	browserCoordinates[id].y1 = y;
-	browserCoordinates[id].x2 = x+30;
+	browserCoordinates[id].x2 = x+(15*SCREEN_SCALE);
 	browserCoordinates[id].y2 = y+11;
 	browserButtonCmdId[id] = id;
 
-	tgi_setcolor(0);
-	tgi_line(x+10,y+2,x+10,y+2);
-	tgi_line(x+9,y+3,x+9,y+3);
-	tgi_line(x+8,y+4,x+10,y+4);
-	tgi_line(x+7,y+5,x+21,y+5);
-	tgi_line(x+6,y+6,x+21,y+6);
-	tgi_line(x+7,y+7,x+21,y+7);
-	tgi_line(x+8,y+8,x+10,y+8);
-	tgi_line(x+9,y+9,x+10,y+9);
-	tgi_line(x+10,y+10,x+10,y+10);
-	tgi_setcolor(1);
+	draw_icon(x+4,y+2,&icon);
+	
+	free(icon.data);
 }
 
 void drawButton_Next(int x,int y, int id)
 {
-	tgi_box(x,y,x+30,y+11,0);	// back
+	struct Icon icon;
+	icon.width = 8;
+	icon.height = 9;
+	icon.data = (char **)malloc(sizeof(char) * icon.width * icon.height);
+	
+	icon.data[0] = "        ";
+	icon.data[1] = "   *    ";
+	icon.data[2] = "   **   ";
+	icon.data[3] = "******* ";
+	icon.data[4] = "********";
+	icon.data[5] = "******* ";
+	icon.data[6] = "   **   ";
+	icon.data[7] = "   *    ";
+	icon.data[8] = "        ";
+	
+	tgi_box(x,y,x+(15*SCREEN_SCALE),y+11,0);	// back
 	browserCoordinates[id].x1 = x;
 	browserCoordinates[id].y1 = y;
-	browserCoordinates[id].x2 = x+30;
+	browserCoordinates[id].x2 = x+(15*SCREEN_SCALE);
 	browserCoordinates[id].y2 = y+11;
 	browserButtonCmdId[id] = id;
 
-	tgi_setcolor(0);
-	tgi_line(x+20,y+2,x+20,y+2);
-	tgi_line(x+20,y+3,x+21,y+3);
-	tgi_line(x+20,y+4,x+22,y+4);
-	tgi_line(x+7,y+5,x+23,y+5);
-	tgi_line(x+7,y+6,x+24,y+6);
-	tgi_line(x+7,y+7,x+23,y+7);
-	tgi_line(x+20,y+8,x+22,y+8);
-	tgi_line(x+20,y+9,x+21,y+9);
-	tgi_line(x+20,y+10,x+20,y+10);
-	tgi_setcolor(1);
+	draw_icon(x+4,y+2,&icon);
+	
+	free(icon.data);
 }
 
 void drawButton_Home(int x,int y, int id)
 {
-	tgi_box(x,y,x+30,y+11,0);
+	struct Icon icon;
+	icon.width = 10;
+	icon.height = 9;
+	icon.data = (char **)malloc(sizeof(char) * icon.width * icon.height);
+	
+	icon.data[0] = "          ";
+	icon.data[1] = "    **    ";
+	icon.data[2] = "   ****   ";
+	icon.data[3] = " ******** ";
+	icon.data[4] = "**********";
+	icon.data[5] = " ******** ";
+	icon.data[6] = " ***  *** ";
+	icon.data[7] = " ***  *** ";
+	icon.data[8] = " ***  *** ";
+	
+	tgi_box(x,y,x+(15*SCREEN_SCALE),y+11,0);
 	browserCoordinates[id].x1 = x;
 	browserCoordinates[id].y1 = y;
-	browserCoordinates[id].x2 = x+30;
+	browserCoordinates[id].x2 = x+(15*SCREEN_SCALE);
 	browserCoordinates[id].y2 = y+11;
 	browserButtonCmdId[id] = id;
 
-	tgi_setcolor(0);
-	tgi_line(x+14,y+2,x+18,y+2);
-	tgi_line(x+11,y+3,x+19,y+3);
-	tgi_line(x+8,y+4,x+22,y+4);
-	tgi_line(x+5,y+5,x+25,y+5);
-	tgi_line(x+9,y+6,x+21,y+6);
-	tgi_line(x+9,y+7,x+21,y+7);
-	tgi_line(x+9,y+8,x+21,y+8);
-	tgi_line(x+9,y+9,x+21,y+9);
-	tgi_setcolor(1);
+	draw_icon(x+3,y+1,&icon);
+	
+	free(icon.data);
 }
 
 void drawButton_Speed(int x,int y, int id)
 {
-	tgi_box(x,y,x+70,y+11,0);
+	tgi_box(x,y,x+(35*SCREEN_SCALE),y+11,0);
 	browserCoordinates[id].x1 = x;
 	browserCoordinates[id].y1 = y;
-	browserCoordinates[id].x2 = x+70;
+	browserCoordinates[id].x2 = x+(35*SCREEN_SCALE);
 	browserCoordinates[id].y2 = y+11;
 	browserButtonCmdId[id] = id;
 }
@@ -256,14 +310,14 @@ void drawButton_Speed(int x,int y, int id)
 void drawButton_Exit(int x,int y, int id)
 {
 	// exit box
-	tgi_box(x,y,x+25,y+8,0);
+	tgi_box(x,y,x+(12*SCREEN_SCALE+1),y+8,0);
 	tgi_setcolor(1);
-	tgi_bar(x+1,y+1,x+24,y+7);
+	tgi_bar(x+1,y+1,x+(12*SCREEN_SCALE),y+7);
 	tgi_setcolor(0);
-	tgi_bar(x+2,y+2,x+23,y+6);
+	tgi_bar(x+2,y+2,x+(12*SCREEN_SCALE-1),y+6);
 	browserCoordinates[id].x1 = x;
 	browserCoordinates[id].y1 = y;
-	browserCoordinates[id].x2 = x+25;
+	browserCoordinates[id].x2 = x+(12*SCREEN_SCALE+1);
 	browserCoordinates[id].y2 = y+8;
 	browserButtonCmdId[id] = id;
 }
@@ -305,17 +359,17 @@ void drawScreen(void)
 	
 	// Draw buttons
 	drawButton_Reload(8,12,0,SYS_FONT_SCALE);
-	drawButton_Back(100,12,1);
-	drawButton_Next(140,12,2);
-	drawButton_Home(180,12,6);
-	drawButton_Speed(220,12,3);
+	drawButton_Back(50*SCREEN_SCALE,12,1);
+	drawButton_Next(70*SCREEN_SCALE,12,2);
+	drawButton_Home(90*SCREEN_SCALE,12,6);
+	drawButton_Speed(110*SCREEN_SCALE,12,3);
 	drawButton_Exit(SCREEN_WIDTH - 39,2,4);
 	
 	tgi_setcolor(0);
 #ifdef __C128__
-	tgi_outtxt("2400",4,225,15,SYS_FONT_SCALE);
+	tgi_outtxt("2400",4,(112*SCREEN_SCALE),15,SYS_FONT_SCALE);
 #else
-	tgi_outtxt("1200",4,225,15,SYS_FONT_SCALE);
+	tgi_outtxt("1200",4,(112*SCREEN_SCALE),15,SYS_FONT_SCALE);
 #endif
 	tgi_setcolor(1);
 	
@@ -766,7 +820,7 @@ void browserbuttonClick(struct Coordinates *coords, int command)
 			{
 				speed = 2400;
 				tgi_setcolor(0);
-				tgi_outtxt("2400",4,225,15,SYS_FONT_SCALE);
+				tgi_outtxt("2400",4,(112*SCREEN_SCALE),15,SYS_FONT_SCALE);
 				tgi_setcolor(1);
 				us_close();
 				us_init2400();
@@ -775,7 +829,7 @@ void browserbuttonClick(struct Coordinates *coords, int command)
 			{
 				speed = 1200;
 				tgi_setcolor(0);
-				tgi_outtxt("1200",4,225,15,SYS_FONT_SCALE);
+				tgi_outtxt("1200",4,(112*SCREEN_SCALE),15,SYS_FONT_SCALE);
 				tgi_setcolor(1);
 				us_close();
 				us_init1200();
@@ -948,7 +1002,7 @@ int main ()
 					clearStatusBar();
 					tgi_outtxt("page loading",12, STATUSX,STATUSY,SYS_FONT_SCALE);
 					sayonce=1;
-					cx = STATUSX+130;
+					cx = STATUSX+(FONT_WIDTH*SYS_FONT_SCALE*12);
 					cy = STATUSY;
 				}
 				
@@ -976,8 +1030,8 @@ int main ()
 						if(inBufferIndex % 3 == 0)
 						{
 							cbuf[0] = '.';
-							tgi_outtxt(cbuf,1, STATUSX+150+periodx, STATUSY, SYS_FONT_SCALE);
-							periodx+=6*scale;
+							tgi_outtxt(cbuf,1, STATUSX+(12*SYS_FONT_SCALE*FONT_WIDTH)+periodx, STATUSY,SYS_FONT_SCALE);
+							periodx+=FONT_WIDTH*SYS_FONT_SCALE;
 						}
 					}
 				}
