@@ -70,7 +70,13 @@ extern install_nmi_trampoline();
 #define MAXLINESPERPAGE	100
 #define MAXFILENAMESZ	40
 
+#ifdef __C128__
 #define MACHINE_RESET_VECTOR	"jsr $FF3D"
+#endif
+
+#ifdef __C64__
+#define MACHINE_RESET_VECTOR	"jsr $FCE2"
+#endif
 
 // prototypes
 

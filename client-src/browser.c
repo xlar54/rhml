@@ -375,11 +375,11 @@ void drawScreen(void)
 	
 	
 	// Command bar (to clear when clicked)
-	browserCoordinates[4].x1 = 0;
-	browserCoordinates[4].y1 = 26;
-	browserCoordinates[4].x2 = SCREEN_WIDTH;
-	browserCoordinates[4].y2 = 37;
-	browserButtonCmdId[4] = 5;
+	browserCoordinates[5].x1 = 0;
+	browserCoordinates[5].y1 = 26;
+	browserCoordinates[5].x2 = SCREEN_WIDTH;
+	browserCoordinates[5].y2 = 37;
+	browserButtonCmdId[5] = 5;
 
 	tgi_outtxt(title, 12, TITLEX,TITLEY, SYS_FONT_SCALE);
 	drawCommandBar(NULL, true);
@@ -840,6 +840,7 @@ void browserbuttonClick(struct Coordinates *coords, int command)
 		case 4:  
 		{
 			// exit
+			cprintf("bye");
 			asm(MACHINE_RESET_VECTOR);
 			break;
 		}
@@ -867,6 +868,7 @@ bool mouseClickHandler(int x, int y)
 	{
 		if(inBounds(x, y, &browserCoordinates[tmp])==true)
 		{
+			cprintf("bounds");
 			clicked = false;
 			browserbuttonClick(&browserCoordinates[tmp], browserButtonCmdId[tmp]);
 			break;
