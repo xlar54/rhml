@@ -92,47 +92,71 @@ function requestPage(socket, page) {
 
 		sleep(300);
 		page = page.toLowerCase();
+		
 		console.log(socket.remoteAddress + " requested " + page);
 		
-		var lineReader = require('readline').createInterface({
-		  input: require('fs').createReadStream(page)
-		});
-
-		lineReader.on('line', function (line) {
-		  
-			if(line.substring(0,3) == "*X,")
-			{
-				var newlin = "";
-				line = line.substring(3);
-				for(var t=0;t<line.length;t++)
-				{
-					if(line.charAt(t) != ' ')
-						newlin += "X";
-					else
-						newlin += " ";
-				}
-
-				line = "*X," + rle.encode(newlin)+"\r";
+		fs.stat(page, function(err, stat) {
+			
+			if(err == null) {
 				
-			}
+				var lineReader = require('readline').createInterface({
+				  input: require('fs').createReadStream(page)
+				});
+
+				lineReader.on('line', function (line) {
+				  
+					if(line.substring(0,3) == "*X,")
+					{
+						var newlin = "";
+						line = line.substring(3);
+						for(var t=0;t<line.length;t++)
+						{
+							if(line.charAt(t) != ' ')
+								newlin += "X";
+							else
+								newlin += " ";
+						}
+
+						line = "*X," + rle.encode(newlin)+"\r";
+						
+					}
+							
+					for(var v=0;v<line.length;v++)
+					{
+						// slow down output just a bit (may be machine dependent)
+						// without this, some data loss occurs because data send is too fast
+						sleep(20);
+						socket.write(line.charAt(v));
+					}
+					sleep(20);
+					socket.write("\r");
+				  
+				}).on('close', function() {
 					
-			for(var v=0;v<line.length;v++)
-			{
-				// slow down output just a bit (may be machine dependent)
-				// without this, some data loss occurs because data send is too fast
-				sleep(20);
-				socket.write(line.charAt(v));
+					sleep(60);
+					socket.write("*E\r");
+					
+				});
+			} else if(err.code == 'ENOENT') {
+				
+				fs.readFile("404.rhml", 'utf8', function(err, data) {
+				if(err !== null)
+				{
+					socket.write("*T,404 FILE NOT FOUND..AND SERVER IS MISSING 404 PAGE\r");
+					socket.write("*E\r");
+				}
+				else
+				{
+					data += "\r*E\r";
+					socket.write(data);
+				}
+				
+			});
+			} else {
+				console.log('Some other error: ', err.code);
 			}
-			sleep(20);
-			socket.write("\r");
-		  
-		}).on('close', function() {
-			
-			sleep(60);
-			socket.write("*E\r");
-			console.log("<EOF>");
-			
 		});
+
 		
 		// Read the file and print its contents.
 		/*fs.readFile(page, 'utf8', function(err, data) {
