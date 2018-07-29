@@ -47,6 +47,8 @@ int browserButtonCount=6;
 char inBuffer[MAXLINESPERPAGE][MAXCOLSPERPAGE];
 int inBufferIndex = 0;
 
+
+
 uint8_t serialGet()
 {
 	uint8_t c = 0;
@@ -136,6 +138,10 @@ void init(void)
 	int err = 0;
 	uint8_t c = 0;
 	cprintf ("initializing...\r\n");
+	
+	POKE(53280,0);
+	POKE(53281,0);
+	
 	
 #ifdef __C128__
 	fast();
