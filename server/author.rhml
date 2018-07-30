@@ -76,13 +76,13 @@
 *X,    $$$$$$
 *G,60,10
 *S,3
-*T,THE AUTHOR
+*T,The Author
 *M,35
 *T,
 *S,2
-*T,YOU CAN REACH ME AT SCOTT.HUTTER@GMAIL.COM
+*T,You can reach me at scott.hutter@gmail.com.
 *T,
-*T,THANK YOU FOR YOUR SUPPORT OF THIS PROJECT
-*T,AND ENJOY!
-*T,
-*B,10,165,index.rhml,GO HOME
+*T,Thank you for your support of this project,
+*T,and enjoy!  Developers are welcome to submit
+*T,pull requests as well!
+*B,10,165,index.rhml,Go Home

@@ -49,14 +49,14 @@ extern install_nmi_trampoline();
 #define PAGEY2	183
 
 #ifdef __C128__
-#define TITLEX	245
+#define TITLEX	275
 #endif
 
 #ifdef __C64__
-#define TITLEX	90
+#define TITLEX	120
 #endif
 
-#define TITLEY	3
+#define TITLEY	2
 
 #define CMDLINEX 5
 #define CMDLINEY 30
@@ -89,16 +89,18 @@ void drawButton_Home(int x,int y, int id);
 void drawButton_Speed(int x,int y, int id);
 void drawButton_Exit(int x,int y, int id);
 void drawCommandBar(char* text, bool showPrompt);
-void drawPointer(int x, int y, int px, int py);
-void drawPrompt(int x,int y,int size);
+void mousepointer_restore(struct MouseSprite* mousePointer);
+void mousepointer_stash(struct MouseSprite* mousePointer);
+void mousepointer_draw(struct MouseSprite* mousePointer, bool force);
+void draw_icon(int x, int y, struct Icon* icon);
 void clearStatusBar(void);
 void clearPage(void);
 void getSParam(char delimiter, char* buf,  int size, int param, char *out);
 
-void tgi_outtxt(char *text, int idx, int x1, int y1, int scale);
+int tgi_outtxt(char *text, int idx, int x1, int y1, int scale);
 void tgi_box(int x1, int y1, int x2, int y2, int color);
+void tgi_button(int x1, int y1, char *text, struct Coordinates*);
 void tgi_putc(char c, int scale);
-void tgi_print(char* text, int len, int scale);
 
 void sendRequest(char* request);
 void processPage(void);

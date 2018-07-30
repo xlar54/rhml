@@ -1,44 +1,21 @@
-*M,5
-*G,0,10
-*X,         XXXXXXXXXXXXXXX
-*X,       XXXXXXXXXXXXXXXXXX
-*X,     XXXXXXXXXXXXXXXXXXXX
-*X,   XXXXXXXXXXXXXXXXXXXXXX
-*X,  XXXXXXXXXXXXXXXXXXXXXXX
-*X, XXXXXXXXXXXX
-*X, XXXXXXXXXX             XXXXXXXXXXXXXX
-*X,XXXXXXXXXX              XXXXXXXXXXXXX
-*X,XXXXXXXXX               XXXXXXXXXX
-*X,XXXXXXXXX               XXXXXXXXXX
-*X,XXXXXXXXX
-*X,XXXXXXXXX               XXXXXXXXXX
-*X,XXXXXXXXXX              XXXXXXXXXXXX
-*X,XXXXXXXXXX              XXXXXXXXXXXXXX
-*X, XXXXXXXXXXX            XXXXXXXXXXXXXX
-*X,  XXXXXXXXXXXX
-*X,   XXXXXXXXXXXXXXXXXXXXXX
-*X,    XXXXXXXXXXXXXXXXXXXXX
-*X,       XXXXXXXXXXXXXXXXXX
-*X,        $XXXXXXXXXXXXXXXX
-*S,3
-*M,50
-*G,0,10
+*I,logo.txt
+*M,70
+*T,
 *T,RHML - TO DO...
 *S,2
 *T,
-*T,I WILL POSTING IDEAS HERE FROM OTHERS
-*T,AS WELL AS MY OWN TO COMPLETE THIS
-*T,INITIAL REFERENCE IMPLEMENTATION.
-*T,FEEL FREE TO EMAIL ME:
-*T, (SCOTT.HUTTER@GMAIL.COM) FOR MORE
-*T,IDEAS!
+*T,I will be posting ideas here from others
+*T,as well as my own to complete this
+*T,initial reference implementation.
+*T,Here's some I've been working on:
 *T,
-*T, - A CANCEL LOADING BUTTON
-*T, - LINK TO OTHER SERVERS
-*T, - FORWARD AND BACK BUTTON HISTORY
-*T, - A C64 PORT 
-*T, - FORMS (INPUT BOXES, SUBMIT BTNS)
+*T, - The ability to cancel loading
+*T, - Linking to other servers
+*T, - Forward and back button history
+*T, - Forms (Input buttons, labels, etc)
+*T, - Extract out widget code into its own library
 *T,
 *M,5
-*B,10,165,index.rhml,HOME
-*B,120,165,bugs.rhml,KNOWN BUGS
+*S,2
+*B,10,125,index.rhml,Go Home
+*B,10,155,bugs.rhml,Bugs

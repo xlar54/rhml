@@ -1,26 +1,21 @@
-*M,5
+*I,logo.txt
+*M,40
 *G,0,10
-*S,3
 *T,TEXT
-*M,30
 *T,
 *S,2
-*T,TEXT CAN EASILY BE RENDERED VIA THE *T COMMAND.
-*T,THE PROPER FORMAT IS
+*T,Text can be rendered with the T command.
+*T,The proper format is:
 *T,
-*T,*T THE MARKUP TO RENDER 
+*T,*T,The text to render 
 *T,
-*T,YOU CAN CHANGE THE FONT SIZE (SCALE) USING
-*T,THE (*S)CALE COMMAND.
+*T,You can alter the scale of the font with 
+*T,the (*S) command.
 *T,
 *S,1
-*T,S1 IS A SMALLER FONT SIZE..
-*T,
-*S,4
-*T,S4 IS MUCH LARGER.
+*T,S1 is the smallest size, S4 is much larger.
 *T,
 *S,2
-*T,(*M)ARGIN WILL FORCE YOUR TEXT TO X PIXELS
-*T,TO THE RIGHT.
-*B,10,165,index.rhml,GO HOME
-*B,120,165,graphics.rhml,GRAPHICS
+*T,(*M)argin will force pixels to the right.
+*B,10,125,index.rhml,Go Home
+*B,10,155,graphics.rhml,Graphics

@@ -1,6 +1,7 @@
 var net = require('net');
 var fs = require('fs');
- 
+
+var imges = [];
 var sockets = [];
 var inqueue = "";
 
@@ -105,36 +106,50 @@ function requestPage(socket, page) {
 
 				lineReader.on('line', function (line) {
 				  
-					if(line.substring(0,3) == "*X,")
+					if(line.substring(0,3) == "*I,")
 					{
-						var newlin = "";
-						line = line.substring(3);
-						for(var t=0;t<line.length;t++)
+						imges.push(line.substring(3));
+					}
+					else
+					{
+						if(line.substring(0,3) == "*X,")
 						{
-							if(line.charAt(t) != ' ')
-								newlin += "X";
-							else
-								newlin += " ";
-						}
+							var newlin = "";
+							line = line.substring(3);
+							for(var t=0;t<line.length;t++)
+							{
+								if(line.charAt(t) != ' ')
+									newlin += "X";
+								else
+									newlin += " ";
+							}
 
-						line = "*X," + rle.encode(newlin)+"\r";
-						
-					}
-							
-					for(var v=0;v<line.length;v++)
-					{
-						// slow down output just a bit (may be machine dependent)
-						// without this, some data loss occurs because data send is too fast
+							line = "*X," + rle.encode(newlin)+"\r";
+						}
+								
+						for(var v=0;v<line.length;v++)
+						{
+							// slow down output just a bit (may be machine dependent)
+							// without this, some data loss occurs because data send is too fast
+							sleep(20);
+							socket.write(line.charAt(v));
+						}
 						sleep(20);
-						socket.write(line.charAt(v));
+						socket.write("\r");
 					}
-					sleep(20);
-					socket.write("\r");
 				  
 				}).on('close', function() {
 					
 					sleep(60);
-					socket.write("*E\r");
+					if(imges.length == 0)
+					{
+						socket.write("*E\r");
+					}
+					else
+					{
+						page = imges.pop();
+						requestPage(socket,page);
+					}
 					
 				});
 			} else if(err.code == 'ENOENT') {
@@ -156,6 +171,7 @@ function requestPage(socket, page) {
 				console.log('Some other error: ', err.code);
 			}
 		});
+
 
 		
 		// Read the file and print its contents.

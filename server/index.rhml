@@ -1,45 +1,20 @@
-
-*M,5
-*G,0,10
-*X,         XXXXXXXXXXXXXXX
-*X,       XXXXXXXXXXXXXXXXXX
-*X,     XXXXXXXXXXXXXXXXXXXX
-*X,   XXXXXXXXXXXXXXXXXXXXXX
-*X,  XXXXXXXXXXXXXXXXXXXXXXX
-*X, XXXXXXXXXXXX
-*X, XXXXXXXXXX             XXXXXXXXXXXXXX
-*X,XXXXXXXXXX              XXXXXXXXXXXXX
-*X,XXXXXXXXX               XXXXXXXXXX
-*X,XXXXXXXXX               XXXXXXXXXX
-*X,XXXXXXXXX
-*X,XXXXXXXXX               XXXXXXXXXX
-*X,XXXXXXXXXX              XXXXXXXXXXXX
-*X,XXXXXXXXXX              XXXXXXXXXXXXXX
-*X, XXXXXXXXXXX            XXXXXXXXXXXXXX
-*X,  XXXXXXXXXXXX
-*X,   XXXXXXXXXXXXXXXXXXXXXX
-*X,    XXXXXXXXXXXXXXXXXXXXX
-*X,       XXXXXXXXXXXXXXXXXX
-*X,        $XXXXXXXXXXXXXXXX
-*S,2
+*I,logo.txt
 *M,40
 *G,0,10
-*T,WELCOME TO THE FIRST
-*T,RHML SERVER
+*T,Welcome to the first RHML server!
 *S,2
 *T,
-*T,THE PURPOSE OF THIS SERVER, AND THE PROTOCOL,
-*T,IS TO PROVIDE THE RETRO COMPUTING ENTHUSIASTS
-*T,WITH A MORE COMPACT PROTOCOL WHICH WILL
-*T,PROVIDE NETWORK CARD / WIFI MODEM USERS A 
-*T,MORE WEB-LIKE EXPERIENCE.
+*T,The purpose of this server, and the protocol,
+*T,is to provide the retro computing enthusiasts
+*T,with a more compact protocol which will
+*T,offer network card & wifi modem user a
+*T,web-like experience.
 *T,
-*M,5
-*T,YOU CAN CONSIDER RHML SIMILAR TO THE WEB, BUT
-*T,MORE LIKE RIPSCRIPT OF THE EARLY 90'S. IT IS
-*T,INTENDED TO BE A LIGHTWEIGHT GRAPHICAL
-*T,MARKUP LANGUAGE, MORE USABLE ON OLDER 8 BIT
-*T,MACHINES SUCH AS THE COMMODORE 64 AND 128.
+*T,RHML is very similar to RIPScript of the early
+*T,90's used by many PC BBS software packages.
+*T,It provides graphic commands, text, and more.
+*T,As such, it is ideal for smaller memory computers
+*T,such as the C64, 128, Atari and early Apple machines.
 *T,
-*B,10,165,text.rhml,SEE DEMO
-*B,120,165,status.rhml,LATEST NEWS
+*B,10,125,text.rhml,See Demo
+*B,10,155,status.rhml,Latest News
