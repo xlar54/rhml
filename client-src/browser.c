@@ -261,6 +261,9 @@ void draw_icon(int x, int y, struct Icon* icon)
 void drawButton_Reload(int x,int y, int id, int scale)
 {
 	tgi_box(x,y,x+(40*SCREEN_SCALE),y+11,FORECOLOR);	// reload
+	tgi_setcolor(BACKCOLOR);
+	tgi_bar(x+1,y+1,x+(40*SCREEN_SCALE)-1,y+10);
+	tgi_setcolor(FORECOLOR);
 	browserCoordinates[id].x1 = x;
 	browserCoordinates[id].y1 = y;
 	browserCoordinates[id].x2 = x+(40*SCREEN_SCALE);
@@ -288,6 +291,9 @@ void drawButton_Back(int x,int y, int id)
 	icon.data[8] = "        ";
 	
 	tgi_box(x,y,x+(15*SCREEN_SCALE),y+11,FORECOLOR);	// back
+	tgi_setcolor(BACKCOLOR);
+	tgi_bar(x+1,y+1,x+(15*SCREEN_SCALE)-1,y+10);
+	tgi_setcolor(FORECOLOR);
 	browserCoordinates[id].x1 = x;
 	browserCoordinates[id].y1 = y;
 	browserCoordinates[id].x2 = x+(15*SCREEN_SCALE);
@@ -317,6 +323,9 @@ void drawButton_Next(int x,int y, int id)
 	icon.data[8] = "        ";
 	
 	tgi_box(x,y,x+(15*SCREEN_SCALE),y+11,FORECOLOR);	// back
+	tgi_setcolor(BACKCOLOR);
+	tgi_bar(x+1,y+1,x+(15*SCREEN_SCALE)-1,y+10);
+	tgi_setcolor(FORECOLOR);
 	browserCoordinates[id].x1 = x;
 	browserCoordinates[id].y1 = y;
 	browserCoordinates[id].x2 = x+(15*SCREEN_SCALE);
@@ -346,6 +355,9 @@ void drawButton_Home(int x,int y, int id)
 	icon.data[8] = " ***  *** ";
 	
 	tgi_box(x,y,x+(15*SCREEN_SCALE),y+11,FORECOLOR);
+	tgi_setcolor(BACKCOLOR);
+	tgi_bar(x+1,y+1,x+(15*SCREEN_SCALE)-1,y+10);
+	tgi_setcolor(FORECOLOR);
 	browserCoordinates[id].x1 = x;
 	browserCoordinates[id].y1 = y;
 	browserCoordinates[id].x2 = x+(15*SCREEN_SCALE);
@@ -360,11 +372,20 @@ void drawButton_Home(int x,int y, int id)
 void drawButton_Speed(int x,int y, int id)
 {
 	tgi_box(x,y,x+(35*SCREEN_SCALE),y+11,FORECOLOR);
+	tgi_setcolor(BACKCOLOR);
+	tgi_bar(x+1,y+1,x+(35*SCREEN_SCALE)-1,y+10);
+	tgi_setcolor(FORECOLOR);
 	browserCoordinates[id].x1 = x;
 	browserCoordinates[id].y1 = y;
 	browserCoordinates[id].x2 = x+(35*SCREEN_SCALE);
 	browserCoordinates[id].y2 = y+11;
 	browserButtonCmdId[id] = id;
+}
+
+void updateButton_Speed(char *text)
+{
+	drawButton_Speed(110*SCREEN_SCALE,12,3);
+	tgi_outtxt(text,strlen(text),(112*SCREEN_SCALE),15,SYS_FONT_SCALE);
 }
 
 void drawButton_Exit(int x,int y, int id)
@@ -390,6 +411,9 @@ void drawPrompt(int x, int y)
 void drawScreen(void)
 {
 	char *title = "rhml browser";
+	int x = 0;
+	int y = 0;
+	int alt = 3;
 	
 	tgi_init ();
     tgi_clear ();	
@@ -411,13 +435,20 @@ void drawScreen(void)
 	tgi_line(0,PAGEY1-1,SCREEN_WIDTH,PAGEY1-1);
 	tgi_line(0,PAGEY2+2,SCREEN_WIDTH,PAGEY2+2);
 	
+	// Draw background pattern
+	for(y=11;y<25;y++)
+		for(x=0;x<SCREEN_WIDTH;x++)
+			if((x + y) & 1 == 1)
+				tgi_setpixel(x,y);
+	
+	
 	// Draw buttons
 	drawButton_Reload(8,12,0,SYS_FONT_SCALE);
 	drawButton_Back(50*SCREEN_SCALE,12,1);
 	drawButton_Next(70*SCREEN_SCALE,12,2);
 	drawButton_Home(90*SCREEN_SCALE,12,6);
-	drawButton_Speed(110*SCREEN_SCALE,12,3);
 	drawButton_Exit(SCREEN_WIDTH - 39,2,4);
+	drawButton_Speed(110*SCREEN_SCALE,12,3);
 	
 #ifdef __C128__
 	tgi_outtxt("2400",4,(112*SCREEN_SCALE),15,SYS_FONT_SCALE);
@@ -861,6 +892,8 @@ void linkbuttonClick(struct Coordinates *coords, char *linkPage)
 
 void browserbuttonClick(struct Coordinates *coords, int command)
 {
+	char text[10];
+	
 	if(command != 5) 
 	{
 		// Flash the box that was clicked for visual feedback
@@ -892,17 +925,21 @@ void browserbuttonClick(struct Coordinates *coords, int command)
 			if (speed == 1200)
 			{
 				speed = 2400;
-				tgi_outtxt("2400",4,(112*SCREEN_SCALE),15,SYS_FONT_SCALE);
 				us_close();
 				us_init2400();
 			}
 			else
 			{
 				speed = 1200;
-				tgi_outtxt("1200",4,(112*SCREEN_SCALE),15,SYS_FONT_SCALE);
 				us_close();
 				us_init1200();
 			}
+			
+			itoa(speed, text, 10);
+			(*mouseSprite.restoreCache)(&mouseSprite);
+			updateButton_Speed(text);
+			(*mouseSprite.saveCache)(&mouseSprite);
+			(*mouseSprite.draw)(&mouseSprite, true);
 #endif
 			return;
 		}
@@ -1099,7 +1136,7 @@ int main ()
 					{			
 						inBufferIndex++;
 						idx=0;
-						if(inBufferIndex % 3 == 0)
+						//if(inBufferIndex % 3 == 0)
 							(*statusBar.write)(&statusBar, ".");
 					}
 				}
