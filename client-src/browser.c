@@ -511,14 +511,14 @@ void tgi_button(int x1, int y1, char *text, struct Coordinates* coords)
 	for(tmp=0;tmp<strlen(text);tmp++)
 		b += getCharWidth(text[tmp])+1;
 	
-	x2 = x1 + (BTN_RL_PADDING + b + BTN_RL_PADDING) * SCREEN_SCALE;
+	x2 = x1 + (BTN_RL_PADDING + b + BTN_RL_PADDING)*SCREEN_SCALE;
 	y2 = y1 + BTN_TB_PADDING + FONT_HEIGHT + BTN_TB_PADDING;
 
 	tgi_box(x1,y1,x2,y2,FORECOLOR);
 	tgi_line(x1+5,y2+1,x2+1,y2+1);
 	tgi_line(x2+1,y1+3,x2+1,y2+1);
 	
-	tgi_outtxt(text, strlen(text), x1+BTN_RL_PADDING,y1+BTN_TB_PADDING, scale);
+	tgi_outtxt(text, strlen(text), x1+BTN_RL_PADDING*SCREEN_SCALE,y1+BTN_TB_PADDING, scale);
 	
 	coords->x1 = x1;
 	coords->y1 = y1;
