@@ -511,7 +511,7 @@ void tgi_button(int x1, int y1, char *text, struct Coordinates* coords)
 	for(tmp=0;tmp<strlen(text);tmp++)
 		b += getCharWidth(text[tmp])+1;
 	
-	x2 = x1 + BTN_RL_PADDING + b + BTN_RL_PADDING;
+	x2 = x1 + (BTN_RL_PADDING + b + BTN_RL_PADDING) * SCREEN_SCALE;
 	y2 = y1 + BTN_TB_PADDING + FONT_HEIGHT + BTN_TB_PADDING;
 
 	tgi_box(x1,y1,x2,y2,FORECOLOR);
@@ -538,6 +538,7 @@ int tgi_outtxt(char *text, int idx, int x1, int y1, int scale)
 	uint8_t height = 0;
 	uint8_t htmp = 0;
 	uint8_t base = 0;
+	uint8_t z = 0;
 	int origX = x1;
 	
 	for(curchar=0;curchar<idx;curchar++)
@@ -562,16 +563,20 @@ int tgi_outtxt(char *text, int idx, int x1, int y1, int scale)
 				while (ctr < width)
 				{
 					tgi_setcolor(!(data & bit));
-					tgi_setpixel(x1,y1+byt+(7-(height-base)));
 					
+					for(z=0;z<SCREEN_SCALE;z++)
+					{
+						tgi_setpixel(x1,y1+byt+(7-(height-base)));
+						x1++;
+					}
+
 					bit = bit / 2;
 					ctr++;
-					x1++;
 				}		
 			}
 		}
 		
-		origX+=width+1;
+		origX+=width*SCREEN_SCALE+1;
 		
 	}
 	
@@ -585,7 +590,7 @@ void tgi_putc(char c, int scale)
 	if(c == 13)
 	{
 		cx = PAGEX1;
-		cy += 6*scale;
+		cy += FONT_HEIGHT;
 		
 		if (cy >= PAGEY2)
 		{
@@ -598,8 +603,7 @@ void tgi_putc(char c, int scale)
 		if(c != 10)
 		{
 			buf[0] = c;
-			tgi_outtxt(buf, 1,cx,cy,scale);
-			cx+=6*scale;
+			cx = tgi_outtxt(buf, 1,cx,cy,scale);
 		}
 	}
 }
@@ -678,7 +682,7 @@ void processPage(void)
 			if(inBuffer[zz][1] == 'm')
 			{
 				getSParam(',', inBuffer[zz], bufferLen, 1, param);
-				margin=atoi(param);
+				margin=atoi(param) * SCREEN_SCALE;
 				continue;
 			}
 			

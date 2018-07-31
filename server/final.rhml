@@ -1,24 +1,20 @@
-*M,5
+*I,logo.txt
+*M,40
 *G,0,10
-*S,3
 *T,FINAL NOTES
 *M,30
 *T,
 *S,2
-*T,JUST LIKE A WEB BROWSER YOU CAN GET TO ANY
-*T,SPECIFIC PAGE BY TYPING IN THE CMD BAR AT
-*T,THE TOP.  TRY TYPING INDEX.RHML TO
-*T,RETURN TO THE HOME PAGE.
+*T,Just like a web browser, you can go to a
+*T,specific page by using the url bar at
+*T,the top.  Try typing INDEX.RHML to
+*T,return to the home page.
 *T,
-*T,THE (*B)UTTON COMMAND WILL ALLOW YOU TO 
-*T,MAKE BUTTON LINKS TO OTHER PAGES.
-*T,
-*T,THE FORMAT IS *B X Y PAGENAME.RHML BUTTON TEXT
-*T,
-*T,RHML IS A WORK IN PROGRESS BUT I HOPE 
-*T,ALL PLATFORMS EMBRACE IT.  IT IS COMPILED
-*T,WITH CC65 SO ALL SUPPORTED PLATFORMS SHOULD
-*T,BE ABLE TO USE IT.
-*S,2
-*B,10,165,index.rhml,GO HOME
-*B,120,165,author.rhml,ABOUT ME
+*T,RHML is a work in progress, but I hope
+*T,all retro platforms will embrace it.
+*T,The code is compiled with CC65, making
+*T,it highly portable for many popular older
+*T,machines.
+*M,5
+*B,10,125,index.rhml,Go Home
+*B,10,155,author.rhml,About Me
