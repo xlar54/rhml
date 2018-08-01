@@ -11,6 +11,7 @@ uint16_t cy = PAGEY1;
 bool pageClearedFlag = false;
 struct mouse_info mouseInfo;
 uint16_t speed = 2400;
+bool connected = false;
 
 char currPage[MAXFILENAMESZ];
 char input[MAXINPUTBUFFER];			// keyboard input buffer
@@ -930,8 +931,11 @@ int handleMouseBug(int c, int lastkey)
 
 void sendRequest(char* page)
 {
+	char *request;
+	char *get = "atgethttp://";
 	int ctr = 0;
 	int t=0;
+	int len = strlen(page);
 	
 	page = strlower(page);
 	
@@ -950,13 +954,40 @@ void sendRequest(char* page)
 	(*mouseSprite.restoreCache)(&mouseSprite);
 	linkcount=0;
 	
-	for(ctr=0;ctr<strlen(page);ctr++)
+	// create GET /page HTTP/1.1
+	if(page[strlen(page)-1] == '!')
 	{
-		for(t=0;t<1200;t++) {}; // create a brief delay for the modem to keep up
-		serialPut(page[ctr]);
+		page[strlen(page)-1] = 0;
+		if((request = malloc(strlen(get)+strlen(page)+1)) != NULL)
+		{
+			request[0] = '\0';   // ensures the memory is an empty string
+			strcat(request,get);
+			strcat(request,page);
+			
+			for(ctr=0;ctr<strlen(request);ctr++)
+			{
+				for(t=0;t<600;t++) {}; // create a brief delay for the modem to keep up
+				serialPut(request[ctr]);
+			}
+			for(t=0;t<600;t++){};
+			serialPut(13);
+			free(request);
+		}
 	}
-	for(t=0;t<1200;t++){};
-	serialPut(13);
+	else
+	{
+		for(ctr=0;ctr<strlen(page);ctr++)
+		{
+			for(t=0;t<600;t++) {}; // create a brief delay for the modem to keep up
+			serialPut(page[ctr]);
+		}
+		for(t=0;t<600;t++){};
+		serialPut(13);
+	};
+	
+	//tgi_outtxt(request,strlen(request),100,cy,1);
+	
+
 }
 
 bool inBounds(int x, int y, struct Coordinates *coords)
@@ -1100,6 +1131,13 @@ void addressBarHandler(uint8_t c)
 		
 		c = 0;
 	}
+	else if(c == 19 || c==147)
+	{
+		(*addressBar.clear)(&addressBar);
+		(*addressBar.write)(&addressBar, "url>");
+		input[inputIdx] = 0;
+		inputIdx = 0;
+	}
 	else
 	{
 		if(inputIdx < MAXINPUTBUFFER)
@@ -1118,7 +1156,6 @@ int main ()
 	int tmp = 0;
 	int scale = 2;
 	bool gettingPage = false;
-	bool sayonce = false;
 	int px = 0;
 	int py = 0;
 	int lastkey = -1;
@@ -1171,24 +1208,42 @@ int main ()
 		
 		if (d != 0)
 		{
-			if (idx == 0)
-				gettingPage = (d == '*' ? true : false);
-
-			if (gettingPage == true)
-			{			
-				if (d != 13)
-					inBuffer[inBufferIndex][idx++] = d;
+			if (connected == false)
+			{
+				tgi_putc(d,scale);
+				
+				if(d == 13)
+				{
+					if(!strcmp(inBuffer[0], "connect 2400"))
+					{
+						connected = true;
+						inBufferIndex = 0;
+						idx = 0;
+						inBuffer[inBufferIndex][idx] = 0;
+					}
+					idx = 0;
+				}
 				else
+				{
+					if(d != 10)
+					{
+						inBuffer[0][idx++] = d;
+						inBuffer[0][idx]= 0;
+					}
+				}					
+			}
+			else
+			{			
+				if (d == 13)
 				{
 					inBuffer[inBufferIndex][idx] = 0;
 					
-					if(inBuffer[inBufferIndex][0] == '*' && inBuffer[inBufferIndex][1] == 'e')
+					if(strstr(inBuffer[inBufferIndex], "no carrier") != NULL)
 					{
 						processPage();
 						inBufferIndex=0;
 						idx=0;
-						gettingPage = false;
-						sayonce=false;
+						connected = false;
 						clicked=false;	
 						mouseSprite.enabled = true;
 						(*mouseSprite.saveCache)(&mouseSprite);
@@ -1202,10 +1257,16 @@ int main ()
 							(*statusBar.write)(&statusBar, ".");
 					}
 				}
+				else
+				{
+					if (d != 10)
+						inBuffer[inBufferIndex][idx++] = d;
+				}
 			}
-			else
-				tgi_putc(d,scale);
+			
+
 		} 
 	}
+
 	return 0;
 }
