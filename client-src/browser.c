@@ -1100,6 +1100,13 @@ void addressBarHandler(uint8_t c)
 		
 		c = 0;
 	}
+	else if(c == 19 || c==147)
+	{
+		(*addressBar.clear)(&addressBar);
+		(*addressBar.write)(&addressBar, "url>");
+		input[inputIdx] = 0;
+		inputIdx = 0;
+	}
 	else
 	{
 		if(inputIdx < MAXINPUTBUFFER)
