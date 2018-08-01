@@ -72,18 +72,80 @@ int inBufferIndex = 0;
 
 uint8_t pointer[] = {0xF0,0xE0,0xE0,0xB0,0x18,0x08,0x00,0x00};
 uint8_t pointerBuf[8];
-	
+
+struct ser_params serialParams2400 = {
+    SER_BAUD_2400,      /* Baudrate */
+    SER_BITS_8,         /* Number of data bits */
+    SER_STOP_1,         /* Number of stop bits */
+    SER_PAR_NONE,       /* Parity setting */
+    SER_HS_NONE         /* Type of handshake to use */
+};	
+
+struct ser_params serialParams1200 = {
+    SER_BAUD_1200,      /* Baudrate */
+    SER_BITS_8,         /* Number of data bits */
+    SER_STOP_1,         /* Number of stop bits */
+    SER_PAR_NONE,       /* Parity setting */
+    SER_HS_NONE         /* Type of handshake to use */
+};	
+
 
 uint8_t serialGet()
 {
 	uint8_t c = 0;
+
+#ifdef __C128__
 	c = us_getc();
+#endif
+
+#ifdef __C64__
+	ser_get(&c);
+#endif
+
 	return c;
 }
 
 void serialPut(uint8_t c)
 {
+#ifdef __C128__
 	us_putc(c);
+#endif
+
+#ifdef __C64__
+	ser_put(c);
+#endif
+}
+
+void serialChangeBaud(int baud)
+{
+
+	if (baud == 2400)
+	{
+		speed = baud;
+#ifdef __C128__
+		us_close();
+		us_init2400();
+#endif
+#ifdef __C64__
+		ser_close();
+		ser_open(&serialParams2400);
+		ser_ioctl(1, NULL);
+#endif
+	}
+	else
+	{
+		speed = 1200;
+#ifdef __C128__
+		us_close();
+		us_init1200();
+#endif
+#ifdef __C64__
+		ser_close();
+		ser_open(&serialParams1200);
+		ser_ioctl(1, NULL);
+#endif
+	}
+
 }
 
 void clearScreen(void)
@@ -168,6 +230,7 @@ void init(void)
 {
 	int err = 0;
 	uint8_t c = 0;
+	
 	cprintf ("initializing...\r\n");
 	
 	POKE(53280,0);
@@ -179,22 +242,25 @@ void init(void)
 #endif
 
 #ifdef __C64__
-	us_init1200();
-#endif
 
-#ifdef __C128__    
-	//tgi_load_driver("c128-vdc.tgi");
-	tgi_install(tgi_static_stddrv);
+	// Load driver
+	ser_load_driver("c64-up2400.ser");
+
+	// Open port
+	ser_open(&serialParams2400);
+
+	// Enable serial
+	ser_ioctl(1, NULL);
+
+	//us_init1200();
 #endif
 
 #ifdef __C64__
-	//tgi_load_driver("c64-hi.tgi");
 	install_nmi_trampoline();
-	tgi_install(tgi_static_stddrv);
 #endif
 
-	//tgi_init();
-	
+	tgi_install(tgi_static_stddrv);
+
     err = tgi_geterror ();
     if (err  != TGI_ERR_OK) {
 		cprintf ("Error #%d initializing graphics.\r\n%s\r\n",err, tgi_geterrormsg (err));
@@ -214,8 +280,7 @@ void init(void)
 	mouseSprite.saveCache = &mousepointer_stash;
 	(*mouseSprite.saveCache)(&mouseSprite);
 	
-	cprintf ("ok.\n\r");
-	
+
 	statusBar.x = STATUSX;
 	statusBar.y = STATUSY;
 	statusBar.position = 0;
@@ -226,10 +291,7 @@ void init(void)
 	addressBar.y = CMDLINEY;
 	addressBar.position = 0;
 	addressBar.clear = &clearTextBar;
-	addressBar.write = &writeTextBar;
-
-	
-	
+	addressBar.write = &writeTextBar;	
 }
 
 void draw_icon(int x, int y, struct Icon* icon)
@@ -414,10 +476,26 @@ void drawScreen(void)
 	int x = 0;
 	int y = 0;
 	int alt = 3;
+	uint8_t pal[] = { 0x00, 0x0F };
 	
 	tgi_init ();
-    tgi_clear ();	
+	tgi_setpalette(pal);
+    tgi_clear ();
 	clearScreen();
+
+#ifdef __C64__
+	// Page color background = white
+	asm("sei");
+    asm("lda $01");       // Get ROM config
+    asm("pha");           // Save it
+    asm("and #$FC");   	  // Clear bit 0 and 1
+    asm("sta $01");
+	for(x=0xD0C8;x<0xD398;x++)
+		POKE(x,16);
+    asm("pla");
+    asm("sta $01");
+    asm("cli");
+#endif
 	
 	tgi_setcolor(FORECOLOR);
 	
@@ -450,11 +528,7 @@ void drawScreen(void)
 	drawButton_Exit(SCREEN_WIDTH - 39,2,4);
 	drawButton_Speed(110*SCREEN_SCALE,12,3);
 	
-#ifdef __C128__
 	tgi_outtxt("2400",4,(112*SCREEN_SCALE),15,SYS_FONT_SCALE);
-#else
-	tgi_outtxt("1200",4,(112*SCREEN_SCALE),15,SYS_FONT_SCALE);
-#endif
 	
 	// Command bar (to clear when clicked)
 	browserCoordinates[5].x1 = 0;
@@ -470,7 +544,7 @@ void drawScreen(void)
 	
 	(*statusBar.clear)(&statusBar);
 	(*statusBar.write)(&statusBar, "terminal mode");
-	
+
 }
 
 void getSParam(char delimiter, char* buf,  int size, int param, char *out) 
@@ -854,19 +928,32 @@ int handleMouseBug(int c, int lastkey)
 	return c;
 }
 
-void sendRequest(char* request)
+void sendRequest(char* page)
 {
 	int ctr = 0;
 	int t=0;
 	
+	page = strlower(page);
+	
+	// Update the address bar
+	strcpy(currPage, page);
+	
+	(*addressBar.clear)(&addressBar);
+	(*addressBar.write)(&addressBar, "url>");
+	(*addressBar.write)(&addressBar, currPage);
+				
+	(*statusBar.clear)(&statusBar);
+	(*statusBar.write)(&statusBar, "page loading");
+	
+	// Restore under mouse and disable it
 	mouseSprite.enabled = false;
 	(*mouseSprite.restoreCache)(&mouseSprite);
 	linkcount=0;
 	
-	for(ctr=0;ctr<strlen(request);ctr++)
+	for(ctr=0;ctr<strlen(page);ctr++)
 	{
 		for(t=0;t<1200;t++) {}; // create a brief delay for the modem to keep up
-		serialPut(request[ctr]);
+		serialPut(page[ctr]);
 	}
 	for(t=0;t<1200;t++){};
 	serialPut(13);
@@ -886,7 +973,6 @@ void linkbuttonClick(struct Coordinates *coords, char *linkPage)
 	tgi_box(coords->x1, coords->y1,	coords->x2, coords->y2, FORECOLOR);			
 	
 	strcpy(currPage,linkPage);
-	
 	sendRequest(currPage);
 }
 
@@ -921,26 +1007,16 @@ void browserbuttonClick(struct Coordinates *coords, int command)
 		}
 		case 3:
 		{
-#ifdef __C128__
 			if (speed == 1200)
-			{
-				speed = 2400;
-				us_close();
-				us_init2400();
-			}
+				serialChangeBaud(2400);
 			else
-			{
-				speed = 1200;
-				us_close();
-				us_init1200();
-			}
+				serialChangeBaud(1200);
 			
 			itoa(speed, text, 10);
 			(*mouseSprite.restoreCache)(&mouseSprite);
 			updateButton_Speed(text);
 			(*mouseSprite.saveCache)(&mouseSprite);
 			(*mouseSprite.draw)(&mouseSprite, true);
-#endif
 			return;
 		}
 		case 4:  
@@ -960,7 +1036,7 @@ void browserbuttonClick(struct Coordinates *coords, int command)
 		case 6:
 		{
 			strcpy(currPage, "index.rhml");
-			sendRequest("index.rhml");
+			sendRequest(currPage);
 			break;
 		}
 	}
@@ -997,16 +1073,16 @@ bool mouseClickHandler(int x, int y)
 void addressBarHandler(uint8_t c)
 {
 	char cbuf[] = { 0x00, 0x00 };
+	uint8_t tmp = 0;
 	
 	if(c == 13)
 	{
+		tmp = inputIdx;
 		input[inputIdx] = 0;
 		strcpy(currPage,input);
-		inputIdx = 0;
+		inputIdx = tmp;
 
 		sendRequest(currPage);
-		(*addressBar.clear)(&addressBar);
-		
 	}
 	else if (c == 20)
 	{
@@ -1099,21 +1175,7 @@ int main ()
 				gettingPage = (d == '*' ? true : false);
 
 			if (gettingPage == true)
-			{
-				if (sayonce == false)
-				{
-					if(currPage[0] == 0)
-						strcpy(currPage, "index.rhml");
-					
-					(*addressBar.clear)(&addressBar);
-					(*addressBar.write)(&addressBar, "url>");
-					(*addressBar.write)(&addressBar, currPage);
-									
-					(*statusBar.clear)(&statusBar);
-					(*statusBar.write)(&statusBar, "page loading");
-					sayonce=true;
-				}
-				
+			{			
 				if (d != 13)
 					inBuffer[inBufferIndex][idx++] = d;
 				else
@@ -1145,6 +1207,5 @@ int main ()
 				tgi_putc(d,scale);
 		} 
 	}
-
 	return 0;
 }

@@ -38,15 +38,13 @@ extern install_nmi_trampoline();
 #define SCREEN_WIDTH	320 * SCREEN_SCALE
 #define SCREEN_HEIGHT	199
 
-
-
 #define BTN_TB_PADDING	3
 #define BTN_RL_PADDING	5
 
 #define PAGEX1	0
 #define PAGEY1	40
 #define PAGEX2	SCREEN_WIDTH
-#define PAGEY2	183
+#define PAGEY2	182
 
 #ifdef __C128__
 #define TITLEX	275
