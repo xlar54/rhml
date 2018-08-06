@@ -62,6 +62,7 @@ extern install_nmi_trampoline();
 #define STATUSX	5
 #define STATUSY 190
 
+#define MAXRCVBUFFERSZ	1000
 #define MAXINPUTBUFFER	40
 #define MAXLINKS		10
 #define MAXCOLSPERPAGE	80

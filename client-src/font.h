@@ -15,7 +15,7 @@
 #define FORECOLOR 0
 #define BACKCOLOR 1
 
-int getCharWidth(char c);
+int getCharWidth(int c);
 
 
 int vwfont[91][11] = { 
@@ -116,7 +116,7 @@ int vwfont[91][11] = {
 
 };
 
-int getCharWidth(char c)
+int getCharWidth(int c)
 {
 	c = c-32;
 	if(c>96&&c<123) c=c-6;
