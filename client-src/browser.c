@@ -1163,7 +1163,7 @@ int main ()
 		}
 		
 		c = kbhit();
-		c = handleMouseBug(c, lastkey);
+		//c = handleMouseBug(c, lastkey);
 
 		if(c != 0)
 		{
